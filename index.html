@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>loomv.2 - つながりを、もっと心地よく。</title>
+    <title>loom - つながりを、もっと心地よく。</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -744,6 +744,199 @@
                 if (input) input.value = '';
             } catch (err) {
                 console.error("Send direct message error:", err);
+            }
+        };
+
+        window.selectPresetPhotoModal = function() {
+            const modal = document.getElementById('photoSelectModal');
+            if (modal) modal.classList.remove('hidden');
+        };
+
+        window.closePhotoModal = function() {
+            const modal = document.getElementById('photoSelectModal');
+            if (modal) modal.classList.add('hidden');
+        };
+
+        window.attachPhoto = function(url) {
+            selectedPresetPhoto = url;
+            const previewContainer = document.getElementById('selectedPhotoPreview');
+            const previewImg = document.getElementById('previewPhotoImg');
+            if (previewContainer && previewImg) {
+                previewImg.src = url;
+                previewContainer.classList.remove('hidden');
+            }
+            closePhotoModal();
+        };
+
+        window.clearSelectedPhoto = function() {
+            selectedPresetPhoto = null;
+            const previewContainer = document.getElementById('selectedPhotoPreview');
+            if (previewContainer) {
+                previewContainer.classList.add('hidden');
+            }
+        };
+
+        window.publishMoment = async function() {
+            const input = document.getElementById('momentInputText');
+            const text = input ? input.value.trim() : '';
+
+            if (!text && !selectedPresetPhoto) {
+                showToast('メッセージまたは画像を入力してください');
+                return;
+            }
+
+            try {
+                const momentDoc = doc(getPublicCollection('loom_moments'));
+                const newMoment = {
+                    id: momentDoc.id,
+                    userId: currentUserId,
+                    userName: currentUser ? currentUser.name : 'ユーザー',
+                    userAvatar: currentUser ? currentUser.avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+                    userStatus: currentUser ? currentUser.status : '',
+                    text: text,
+                    imageUrl: selectedPresetPhoto || null,
+                    roomKey: isInRoom ? currentRoomKey : null,
+                    likes: 0,
+                    likedUsers: [],
+                    createdAt: Date.now()
+                };
+
+                await setDoc(momentDoc, newMoment);
+
+                if (input) input.value = '';
+                clearSelectedPhoto();
+                showToast('投稿をシェアしました✨');
+            } catch (err) {
+                console.error("Publish moment error:", err);
+                showToast('投稿の送信に失敗しました');
+            }
+        };
+
+        function setupMomentsListener() {
+            if (unsubMoments) unsubMoments();
+
+            unsubMoments = onSnapshot(getPublicCollection('loom_moments'), (snapshot) => {
+                roomMoments = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const momentId = docSnap.id;
+
+                    if (isInRoom) {
+                        // Room Mode: Only posts created in currentRoomKey
+                        if (data.roomKey === currentRoomKey) {
+                            roomMoments.push({ id: momentId, ...data });
+                        }
+                    } else {
+                        // Personal Mode: Personal non-room posts or my own posts
+                        const isMyPost = data.userId === currentUserId;
+                        if (!data.roomKey || isMyPost) {
+                            roomMoments.push({ id: momentId, ...data });
+                        }
+                    }
+                });
+
+                roomMoments.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                renderMomentsFeed();
+            }, (error) => console.error("Moments error:", error));
+        }
+
+        function renderMomentsFeed() {
+            const feedContainer = document.getElementById('timelineFeed');
+            const momentsOnlyContainer = document.getElementById('momentsOnlyFeed');
+
+            if (roomMoments.length === 0) {
+                const emptyHtml = `
+                    <div class="bg-loom-card p-8 rounded-3xl border border-loom-border text-center text-loom-textMuted space-y-2">
+                        <i class="fa-regular fa-heart text-3xl text-loom-textMuted/40"></i>
+                        <p class="text-sm font-medium">まだ投稿がありません</p>
+                        <p class="text-xs">「今、どんな気分？」から最初の投稿をシェアしてみましょう！</p>
+                    </div>
+                `;
+                if (feedContainer) feedContainer.innerHTML = emptyHtml;
+                if (momentsOnlyContainer) momentsOnlyContainer.innerHTML = emptyHtml;
+                return;
+            }
+
+            const momentsHtml = roomMoments.map(m => {
+                const isLiked = (m.likedUsers || []).includes(currentUserId);
+                const isMyPost = m.userId === currentUserId;
+
+                return `
+                    <div class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <img src="${m.userAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'}" class="w-10 h-10 rounded-full object-cover border border-white shadow-sm">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <h4 class="font-bold text-sm">${escapeHtml(m.userName)}</h4>
+                                        ${m.userStatus ? `<span class="text-[10px] bg-loom-cardAlt text-loom-textMuted px-2 py-0.5 rounded-full">${escapeHtml(m.userStatus)}</span>` : ''}
+                                    </div>
+                                    <p class="text-[10px] text-loom-textMuted">${formatTimestamp(m.createdAt)}${m.roomKey ? ` • ルーム: ${escapeHtml(m.roomKey)}` : ''}</p>
+                                </div>
+                            </div>
+                            ${(isMyPost || isAdminMode) ? `
+                                <button onclick="deleteMoment('${m.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        ${m.text ? `<p class="text-sm leading-relaxed text-loom-text whitespace-pre-line">${escapeHtml(m.text)}</p>` : ''}
+                        
+                        ${m.imageUrl ? `
+                            <div class="rounded-2xl overflow-hidden max-h-80 border border-loom-border/50">
+                                <img src="${m.imageUrl}" class="w-full h-full object-cover" alt="Post Image">
+                            </div>
+                        ` : ''}
+
+                        <div class="flex items-center space-x-4 pt-1 text-xs text-loom-textMuted">
+                            <button onclick="toggleLikeMoment('${m.id}')" class="flex items-center space-x-1.5 ${isLiked ? 'text-rose-500 font-bold' : 'hover:text-rose-500'} transition-colors">
+                                <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-sm"></i>
+                                <span>${m.likes || 0}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (feedContainer) feedContainer.innerHTML = momentsHtml;
+            if (momentsOnlyContainer) momentsOnlyContainer.innerHTML = momentsHtml;
+        }
+
+        window.toggleLikeMoment = async function(momentId) {
+            const moment = roomMoments.find(m => m.id === momentId);
+            if (!moment) return;
+
+            const likedUsers = moment.likedUsers || [];
+            const index = likedUsers.indexOf(currentUserId);
+            let newLikes = moment.likes || 0;
+
+            if (index > -1) {
+                likedUsers.splice(index, 1);
+                newLikes = Math.max(0, newLikes - 1);
+            } else {
+                likedUsers.push(currentUserId);
+                newLikes++;
+            }
+
+            try {
+                await updateDoc(getPublicDoc('loom_moments', momentId), {
+                    likes: newLikes,
+                    likedUsers: likedUsers
+                });
+            } catch (err) {
+                console.error("Like toggle error:", err);
+            }
+        };
+
+        window.deleteMoment = async function(momentId) {
+            if (!confirm('この投稿を削除しますか？')) return;
+            try {
+                await deleteDoc(getPublicDoc('loom_moments', momentId));
+                showToast('投稿を削除しました');
+            } catch (err) {
+                console.error("Delete moment error:", err);
+                showToast('投稿の削除に失敗しました');
             }
         };
 
