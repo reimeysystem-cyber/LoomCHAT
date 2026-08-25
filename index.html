@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>loom4 - つながりを、もっと心地よく。</title>
+    <title>loom - つながりを、もっと心地よく。</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -461,6 +461,7 @@
         let roomUsers = [];
         let roomMoments = [];
         let roomMessages = [];
+        let directMessages = [];
         let friendRequests = [];
         let myFriends = new Set();
 
@@ -522,216 +523,127 @@
             return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
         }
 
-        window.showToast = function(msg) {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-
-            const toast = document.createElement('div');
-            toast.className = 'bg-loom-text text-white text-xs px-4 py-3 rounded-2xl shadow-lg flex items-center space-x-2 pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0';
-            toast.innerHTML = `<i class="fa-solid fa-bell text-emerald-400"></i><span>${escapeHtml(msg)}</span>`;
-
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
-        };
-
-        function playNotificationSound() {
-            if (!notificationsEnabled) return;
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.25);
-            } catch(e) {}
-        }
-
-        window.switchTab = function(tabId) {
-            const tabs = ['home', 'friends', 'messages', 'moments'];
-            tabs.forEach(t => {
-                const navBtn = document.getElementById(`nav-${t}`);
-                const mobBtn = document.getElementById(`mob-nav-${t}`);
-                const tabView = document.getElementById(`tab-${t}`);
-
-                if (t === tabId) {
-                    if (navBtn) navBtn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-2xl bg-loom-cardAlt font-medium text-loom-text transition-all";
-                    if (mobBtn) mobBtn.className = "flex flex-col items-center justify-center flex-1 py-1 text-loom-text";
-                    if (tabView) tabView.classList.remove('hidden');
-                } else {
-                    if (navBtn) navBtn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all";
-                    if (mobBtn) mobBtn.className = "flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted";
-                    if (tabView) tabView.classList.add('hidden');
-                }
-            });
-        };
-
-        window.openProfileModal = function() {
+        function updateMyProfileUI() {
             if (!currentUser) return;
-            document.getElementById('inputProfileName').value = currentUser.name || '';
-            document.getElementById('inputProfileStatus').value = currentUser.status || '集中モード';
-            document.getElementById('inputProfileTime').value = currentUser.statusTime || '~ 18:00';
-            
-            selectedAvatarUrl = currentUser.avatar;
-            renderAvatarPresets();
-            checkNameCooldownUI();
+            const nameEl = document.getElementById('myNameText');
+            const statusEl = document.getElementById('myStatusText');
+            const avatarEl = document.getElementById('myAvatarImg');
 
-            document.getElementById('profileModal').classList.remove('hidden');
-        };
+            if (nameEl) nameEl.innerText = currentUser.name || 'ユーザー';
+            if (statusEl) statusEl.innerText = `${currentUser.status || 'オンライン'}`;
+            if (avatarEl) avatarEl.src = currentUser.avatar || AVATAR_PRESETS[0];
+        }
 
-        window.closeProfileModal = function() {
-            document.getElementById('profileModal').classList.add('hidden');
-        };
+        async function updateUserPresence() {
+            if (!currentUserId || !currentUser) return;
+            try {
+                const presenceDoc = getPublicDoc('loom_presence', currentUserId);
+                await setDoc(presenceDoc, {
+                    id: currentUserId,
+                    name: currentUser.name || 'ユーザー',
+                    avatar: currentUser.avatar || AVATAR_PRESETS[0],
+                    status: currentUser.status || 'オンライン',
+                    statusTime: currentUser.statusTime || '',
+                    roomKey: isInRoom ? currentRoomKey : 'global',
+                    lastSeen: Date.now()
+                });
+            } catch(e) {
+                console.error("Presence update error:", e);
+            }
+        }
 
-        function renderAvatarPresets() {
-            const container = document.getElementById('avatarPresetsContainer');
+        function setupPresenceListener() {
+            if (unsubPresence) unsubPresence();
+            unsubPresence = onSnapshot(getPublicCollection('loom_presence'), (snapshot) => {
+                roomUsers = [];
+                const now = Date.now();
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const lastSeen = parseTimestamp(data.lastSeen);
+                    // Active within 10 minutes
+                    if (now - lastSeen < 600000) {
+                        if (isInRoom) {
+                            if (data.roomKey === currentRoomKey) {
+                                roomUsers.push({ id: docSnap.id, ...data });
+                            }
+                        } else {
+                            roomUsers.push({ id: docSnap.id, ...data });
+                        }
+                    }
+                });
+
+                renderFriendsStatusCarousel();
+                renderRoomMembersList();
+            });
+        }
+
+        function renderFriendsStatusCarousel() {
+            const carousel = document.getElementById('friendsStatusCarousel');
+            const badge = document.getElementById('onlineCountBadge');
+
+            if (badge) badge.innerText = `${roomUsers.length} online`;
+            if (!carousel) return;
+
+            if (roomUsers.length === 0) {
+                carousel.innerHTML = `<p class="text-xs text-loom-textMuted py-3 px-2">オンラインのメンバーはいません</p>`;
+                return;
+            }
+
+            carousel.innerHTML = roomUsers.map(u => {
+                const isMe = u.id === currentUserId;
+                return `
+                    <div onclick="window.openChatWithUser('${u.id}')" class="flex-shrink-0 w-28 bg-loom-card p-3 rounded-2xl border border-loom-border shadow-sm flex flex-col items-center cursor-pointer hover:border-loom-primary transition-all group">
+                        <div class="relative mb-2">
+                            <img src="${u.avatar || AVATAR_PRESETS[0]}" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-400 group-hover:scale-105 transition-transform">
+                            <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+                        </div>
+                        <p class="text-xs font-bold text-loom-text truncate w-full text-center">${escapeHtml(u.name)}${isMe ? ' (自分)' : ''}</p>
+                        <span class="text-[10px] text-loom-textMuted truncate w-full text-center mt-0.5 bg-loom-cardAlt px-2 py-0.5 rounded-full">${escapeHtml(u.status || 'オンライン')}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderRoomMembersList() {
+            const container = document.getElementById('roomMembersList');
             if (!container) return;
-            container.innerHTML = AVATAR_PRESETS.map(url => `
-                <img src="${url}" onclick="window.selectAvatarPreset('${url}')" 
-                     class="w-12 h-12 rounded-full object-cover cursor-pointer border-2 transition-all ${selectedAvatarUrl === url ? 'border-loom-primary scale-110 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'}">
-            `).join('');
-        }
 
-        window.selectAvatarPreset = function(url) {
-            selectedAvatarUrl = url;
-            renderAvatarPresets();
-        };
-
-        function checkNameCooldownUI() {
-            const input = document.getElementById('inputProfileName');
-            const timerLabel = document.getElementById('nameCooldownTimer');
-            if (!currentUser || !input || !timerLabel) return;
-
-            const now = Date.now();
-            const lastChanged = currentUser.nameLastChanged || 0;
-            const cooldownMs = 24 * 60 * 60 * 1000;
-            const elapsed = now - lastChanged;
-
-            if (lastChanged > 0 && elapsed < cooldownMs) {
-                input.disabled = true;
-                input.classList.add('bg-gray-100', 'cursor-not-allowed');
-                const hoursLeft = Math.ceil((cooldownMs - elapsed) / (1000 * 60 * 60));
-                timerLabel.innerText = `再変更まで残り約${hoursLeft}時間`;
-            } else {
-                input.disabled = false;
-                input.classList.remove('bg-gray-100', 'cursor-not-allowed');
-                timerLabel.innerText = '';
-            }
-        }
-
-        window.saveProfileSettings = async function() {
-            const nameInput = document.getElementById('inputProfileName').value.trim();
-            const statusInput = document.getElementById('inputProfileStatus').value;
-            const timeInput = document.getElementById('inputProfileTime').value.trim();
-
-            if (!nameInput) {
-                window.showToast('名前を入力してください');
+            if (roomUsers.length === 0) {
+                container.innerHTML = `<p class="text-xs text-loom-textMuted col-span-2">メンバーはいません</p>`;
                 return;
             }
 
-            const now = Date.now();
-            let nameChanged = false;
-            if (nameInput !== currentUser.name) {
-                currentUser.name = nameInput;
-                currentUser.nameLastChanged = now;
-                nameChanged = true;
-            }
-
-            currentUser.status = statusInput;
-            currentUser.statusTime = timeInput;
-            if (selectedAvatarUrl) currentUser.avatar = selectedAvatarUrl;
-
-            // Save to LocalStorage & Firestore
-            localStorage.setItem('loom_user_profile_v2', JSON.stringify(currentUser));
-            await updateUserPresence();
-            updateMyProfileUI();
-            window.closeProfileModal();
-            window.showToast('プロフィールを保存しました');
-        };
-
-        window.toggleNotifications = function(enabled) {
-            notificationsEnabled = enabled;
-            window.showToast(enabled ? '通知をオンに設定しました' : '通知をオフに設定しました');
-        };
-
-        window.joinCustomRoom = function() {
-            const val = document.getElementById('inputRoomKey').value.trim();
-            if (!val) {
-                window.showToast('Room Keyを入力してください');
-                return;
-            }
-            joinRoom(val);
-        };
-
-        window.leaveRoom = function() {
-            if (!isInRoom) return;
-            isInRoom = false;
-            updateRoomHeaderUI();
-
-            // ルーム離脱時は公開(全体)モードへ切り替えてプレゼンス・リスナーを再更新
-            updateUserPresence();
-            setupPresenceListener();
-            setupMomentsListener();
-            setupMessagesListener();
-
-            window.showToast('公開Chat（全体）モードに切り替えました');
-        };
-
-        async function joinRoom(roomKey) {
-            currentRoomKey = roomKey;
-            isInRoom = true;
-            document.getElementById('inputRoomKey').value = roomKey;
-            updateRoomHeaderUI();
-
-            await updateUserPresence();
-
-            setupPresenceListener();
-            setupMomentsListener();
-            setupMessagesListener();
-            setupFriendsListener();
-
-            renderMessagesViews();
-            window.showToast(`ルーム "${roomKey}" に参加しました`);
-        }
-
-        function updateRoomHeaderUI() {
-            const dot = document.getElementById('roomStatusDot');
-            const label = document.getElementById('roomStatusLabel');
-            const btnLeave = document.getElementById('btnLeaveRoom');
-
-            if (isInRoom) {
-                if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
-                if (label) label.innerText = `ルーム: ${currentRoomKey}`;
-                if (btnLeave) {
-                    btnLeave.className = "bg-gray-200 text-loom-text text-xs px-2.5 py-1 rounded-xl hover:bg-gray-300 transition-all font-medium cursor-pointer";
-                    btnLeave.innerText = "公開へ切替";
-                }
-            } else {
-                if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-blue-500";
-                if (label) label.innerText = "公開Chat (全体)";
-                if (btnLeave) {
-                    btnLeave.className = "bg-gray-100 text-gray-400 text-xs px-2.5 py-1 rounded-xl cursor-not-allowed";
-                    btnLeave.innerText = "公開モード中";
-                }
-            }
+            container.innerHTML = roomUsers.map(u => {
+                const isMe = u.id === currentUserId;
+                return `
+                    <div class="flex items-center justify-between p-3 bg-loom-cardAlt rounded-2xl border border-loom-border/50">
+                        <div class="flex items-center space-x-3">
+                            <img src="${u.avatar || AVATAR_PRESETS[0]}" class="w-9 h-9 rounded-full object-cover">
+                            <div>
+                                <p class="text-xs font-bold">${escapeHtml(u.name)} ${isMe ? '<span class="text-[10px] text-loom-primary">(自分)</span>' : ''}</p>
+                                <p class="text-[10px] text-loom-textMuted">${escapeHtml(u.status || 'オンライン')} ${u.statusTime ? '• ' + escapeHtml(u.statusTime) : ''}</p>
+                            </div>
+                        </div>
+                        ${!isMe ? `
+                            <div class="flex space-x-1">
+                                <button onclick="window.openChatWithUser('${u.id}')" class="bg-loom-card hover:bg-white text-loom-primary border border-loom-border p-2 rounded-xl text-xs" title="メッセージ">
+                                    <i class="fa-regular fa-comment-dots"></i>
+                                </button>
+                                <button onclick="window.sendFriendRequest('${u.id}')" class="bg-loom-primary text-white p-2 rounded-xl text-xs hover:bg-loom-primaryHover" title="フレンド申請">
+                                    <i class="fa-solid fa-user-plus"></i>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
         }
 
         function setupMessagesListener() {
             if (unsubMessages) unsubMessages();
             unsubMessages = onSnapshot(getPublicCollection('loom_messages'), (snapshot) => {
                 roomMessages = [];
+                directMessages = [];
                 let hasNewMsg = false;
                 let senderName = "誰か";
 
@@ -739,11 +651,12 @@
                     const data = docSnap.data();
                     const msgId = docSnap.id;
 
-                    // Direct messages belong exclusively to private DM modals
-                    if (data.msgType === 'direct') return;
+                    if (data.msgType === 'direct') {
+                        directMessages.push({ id: msgId, ...data });
+                        return;
+                    }
 
                     if (isInRoom) {
-                        // Room mode: include messages belonging to currentRoomKey
                         if (data.roomKey === currentRoomKey) {
                             roomMessages.push({ id: msgId, ...data });
                             if (!isInitialMessagesLoad && data.senderId !== currentUserId && !knownMessageIds.has(msgId)) {
@@ -753,7 +666,6 @@
                             knownMessageIds.add(msgId);
                         }
                     } else {
-                        // Public mode: include global/public chat messages
                         if (!data.roomKey || data.roomKey === 'global' || data.roomKey === 'public' || data.msgType === 'public') {
                             roomMessages.push({ id: msgId, ...data });
                             if (!isInitialMessagesLoad && data.senderId !== currentUserId && !knownMessageIds.has(msgId)) {
@@ -773,86 +685,42 @@
                 }
 
                 roomMessages.sort((a, b) => parseTimestamp(a.createdAt) - parseTimestamp(b.createdAt));
+                directMessages.sort((a, b) => parseTimestamp(a.createdAt) - parseTimestamp(b.createdAt));
+
                 renderMessagesViews();
+                if (activeChatUserId) {
+                    renderDirectMessages();
+                }
             });
         }
 
-        function renderMessagesViews() {
-            const sidebarTitle = document.getElementById('sidebarMsgTitle');
-            const sidebarBadge = document.getElementById('sidebarMsgBadge');
-            const sidebarContainer = document.getElementById('sidebarMessagesContainer');
-            const tabContent = document.getElementById('messagesTabContent');
+        function renderDirectMessages() {
+            const container = document.getElementById('chatMessagesContainer');
+            if (!container || !activeChatUserId) return;
 
-            const currentTitle = isInRoom ? `Room Chat (${currentRoomKey})` : "公開Chat (全体)";
-            const currentBadgeText = isInRoom ? "ルーム接続中" : "全体公開";
-            const currentPlaceholder = isInRoom ? "ルームへ送信..." : "全体へ公開メッセージ...";
+            const filtered = directMessages.filter(m => 
+                (m.senderId === currentUserId && m.receiverId === activeChatUserId) ||
+                (m.senderId === activeChatUserId && m.receiverId === currentUserId)
+            );
 
-            if (sidebarTitle) sidebarTitle.innerText = currentTitle;
-            if (sidebarBadge) {
-                sidebarBadge.innerText = currentBadgeText;
-                sidebarBadge.classList.remove('hidden');
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="text-xs text-loom-textMuted text-center pt-8">メッセージ履歴はありません。<br>会話を始めてみましょう！</p>`;
+                return;
             }
 
-            if (sidebarContainer) {
-                const chatHtml = roomMessages.length === 0 
-                    ? `<p class="text-xs text-loom-textMuted text-center py-4">${isInRoom ? 'ルームメッセージはありません。<br>会話を始めましょう！' : '🌐 公開メッセージはありません。<br>最初に声をかけてみましょう！'}</p>`
-                    : roomMessages.map(m => `
-                        <div class="text-xs space-y-1 ${m.senderId === currentUserId ? 'text-right' : 'text-left'}">
-                            <div class="flex items-center space-x-1.5 ${m.senderId === currentUserId ? 'justify-end' : 'justify-start'}">
-                                <span class="font-semibold text-[11px] text-loom-textMuted">${escapeHtml(m.senderName || 'ユーザー')}</span>
-                                <span class="text-[9px] text-gray-400">${formatTimestamp(m.createdAt)}</span>
-                            </div>
-                            <div class="inline-block px-3 py-2 rounded-2xl ${m.senderId === currentUserId ? 'bg-loom-primary text-white' : 'bg-loom-cardAlt text-loom-text'} text-xs break-words max-w-[85%] text-left">
-                                ${escapeHtml(m.text)}
-                            </div>
+            container.innerHTML = filtered.map(m => {
+                const isMe = m.senderId === currentUserId;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1">
+                        <span class="text-[10px] text-gray-400 px-1">${formatTimestamp(m.createdAt)}</span>
+                        <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-xs break-words ${isMe ? 'bg-loom-primary text-white rounded-br-none shadow-sm' : 'bg-white text-loom-text border border-loom-border rounded-bl-none shadow-sm'}">
+                            ${escapeHtml(m.text)}
                         </div>
-                    `).join('');
-
-                sidebarContainer.innerHTML = `
-                    <div class="max-h-60 overflow-y-auto space-y-2.5 pr-1 hide-scrollbar" id="roomChatSidebarList">
-                        ${chatHtml}
-                    </div>
-                    <div class="flex gap-2 pt-2 border-t border-loom-border">
-                        <input type="text" id="inputRoomChatSidebar" placeholder="${currentPlaceholder}" class="flex-1 bg-loom-bg px-3 py-1.5 rounded-xl text-xs outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') window.sendRoomMessage('inputRoomChatSidebar')">
-                        <button onclick="window.sendRoomMessage('inputRoomChatSidebar')" class="bg-loom-primary text-white text-xs px-3 py-1.5 rounded-xl hover:bg-loom-primaryHover font-medium"><i class="fa-solid fa-paper-plane"></i></button>
                     </div>
                 `;
+            }).join('');
 
-                const listEl = document.getElementById('roomChatSidebarList');
-                if (listEl) listEl.scrollTop = listEl.scrollHeight;
-            }
-
-            if (tabContent) {
-                tabContent.innerHTML = `
-                    <div class="flex items-center justify-between pb-3 border-b border-loom-border">
-                        <div>
-                            <h3 class="font-bold text-base">${currentTitle}</h3>
-                            <p class="text-xs text-loom-textMuted">${isInRoom ? '指定したルームに参加しているメンバーと会話できます' : '誰でも閲覧・参加できる全体公開チャットです'}</p>
-                        </div>
-                        <span class="${isInRoom ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'} text-xs font-semibold px-2.5 py-1 rounded-full">${isInRoom ? '🟢 ルーム参加中' : '🌐 公開モード'}</span>
-                    </div>
-                    <div id="roomChatTabList" class="h-80 overflow-y-auto space-y-3 p-2 bg-loom-bg/50 rounded-2xl hide-scrollbar">
-                        ${roomMessages.length === 0 ? `<p class="text-xs text-loom-textMuted text-center pt-10">${isInRoom ? 'ルームメッセージはありません' : '🌐 公開チャットへようこそ！全体へメッセージを送ってみましょう'}</p>` : roomMessages.map(m => `
-                            <div class="flex items-start space-x-2 ${m.senderId === currentUserId ? 'flex-row-reverse space-x-reverse' : ''}">
-                                <img src="${m.senderAvatar || AVATAR_PRESETS[0]}" class="w-8 h-8 rounded-full object-cover">
-                                <div class="${m.senderId === currentUserId ? 'items-end' : 'items-start'} flex flex-col max-w-[70%]">
-                                    <span class="text-[10px] text-loom-textMuted mb-0.5">${escapeHtml(m.senderName || 'ユーザー')} • ${formatTimestamp(m.createdAt)}</span>
-                                    <div class="px-3.5 py-2 rounded-2xl text-xs ${m.senderId === currentUserId ? 'bg-loom-primary text-white' : 'bg-loom-card text-loom-text border border-loom-border'}">
-                                        ${escapeHtml(m.text)}
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="flex gap-2 pt-2">
-                        <input type="text" id="inputRoomChatTab" placeholder="${currentPlaceholder}" class="flex-1 bg-loom-bg px-4 py-2.5 rounded-2xl text-sm outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') window.sendRoomMessage('inputRoomChatTab')">
-                        <button onclick="window.sendRoomMessage('inputRoomChatTab')" class="bg-loom-primary text-white px-5 py-2.5 rounded-2xl text-xs font-semibold hover:bg-loom-primaryHover transition-all">送信</button>
-                    </div>
-                `;
-
-                const tabListEl = document.getElementById('roomChatTabList');
-                if (tabListEl) tabListEl.scrollTop = tabListEl.scrollHeight;
-            }
+            container.scrollTop = container.scrollHeight;
         }
 
         window.sendRoomMessage = async function(inputId) {
@@ -860,6 +728,22 @@
             if (!input) return;
             const text = input.value.trim();
             if (!text) return;
+
+            const newMsg = {
+                id: 'local_' + Date.now(),
+                msgType: isInRoom ? 'room' : 'public',
+                roomKey: isInRoom ? currentRoomKey : 'global',
+                senderId: currentUserId,
+                senderName: currentUser ? currentUser.name : 'ユーザー',
+                senderAvatar: currentUser ? currentUser.avatar : AVATAR_PRESETS[0],
+                text: text,
+                createdAt: Date.now()
+            };
+
+            // Instant optimistic render
+            roomMessages.push(newMsg);
+            input.value = '';
+            renderMessagesViews();
 
             try {
                 const msgDoc = doc(getPublicCollection('loom_messages'));
@@ -872,25 +756,27 @@
                     text: text,
                     createdAt: Date.now()
                 });
-                input.value = '';
-            } catch(e) { window.showToast('送信に失敗しました'); }
+            } catch(e) {
+                console.error("Room Message Send Error:", e);
+            }
         };
 
         window.openChatWithUser = function(userId) {
             const target = roomUsers.find(u => u.id === userId);
-            if (!target) return;
-
             activeChatUserId = userId;
-            document.getElementById('chatTargetName').innerText = target.name;
-            document.getElementById('chatTargetAvatar').src = target.avatar || AVATAR_PRESETS[0];
-            document.getElementById('chatTargetStatus').innerText = target.status || 'オンライン';
+
+            if (target) {
+                document.getElementById('chatTargetName').innerText = target.name;
+                document.getElementById('chatTargetAvatar').src = target.avatar || AVATAR_PRESETS[0];
+                document.getElementById('chatTargetStatus').innerText = target.status || 'オンライン';
+            } else {
+                document.getElementById('chatTargetName').innerText = 'ユーザー';
+                document.getElementById('chatTargetAvatar').src = AVATAR_PRESETS[0];
+                document.getElementById('chatTargetStatus').innerText = 'オフライン';
+            }
 
             document.getElementById('chatModal').classList.remove('hidden');
-        };
-
-        window.closeChatModal = function() {
-            document.getElementById('chatModal').classList.add('hidden');
-            activeChatUserId = null;
+            renderDirectMessages();
         };
 
         window.sendDirectMessage = async function() {
@@ -899,43 +785,34 @@
             const text = input ? input.value.trim() : '';
             if (!text) return;
 
+            const newMsg = {
+                id: 'local_' + Date.now(),
+                msgType: 'direct',
+                senderId: currentUserId,
+                senderName: currentUser ? currentUser.name : 'ユーザー',
+                receiverId: activeChatUserId,
+                text: text,
+                createdAt: Date.now()
+            };
+
+            // Instant optimistic render
+            directMessages.push(newMsg);
+            if (input) input.value = '';
+            renderDirectMessages();
+
             try {
                 const msgDoc = doc(getPublicCollection('loom_messages'));
                 await setDoc(msgDoc, {
                     msgType: 'direct',
                     senderId: currentUserId,
-                    senderName: currentUser.name,
+                    senderName: currentUser ? currentUser.name : 'ユーザー',
                     receiverId: activeChatUserId,
                     text: text,
                     createdAt: Date.now()
                 });
-                if (input) input.value = '';
-            } catch(e) { window.showToast('送信エラー'); }
-        };
-
-        window.selectPresetPhotoModal = function() {
-            document.getElementById('photoSelectModal').classList.remove('hidden');
-        };
-
-        window.closePhotoModal = function() {
-            document.getElementById('photoSelectModal').classList.add('hidden');
-        };
-
-        window.attachPhoto = function(url) {
-            selectedPresetPhoto = url;
-            const previewContainer = document.getElementById('selectedPhotoPreview');
-            const previewImg = document.getElementById('previewPhotoImg');
-            if (previewContainer && previewImg) {
-                previewImg.src = url;
-                previewContainer.classList.remove('hidden');
+            } catch(e) {
+                console.error("Direct Message Send Error:", e);
             }
-            window.closePhotoModal();
-        };
-
-        window.clearSelectedPhoto = function() {
-            selectedPresetPhoto = null;
-            const previewContainer = document.getElementById('selectedPhotoPreview');
-            if (previewContainer) previewContainer.classList.add('hidden');
         };
 
         window.publishMoment = async function() {
@@ -946,6 +823,27 @@
                 window.showToast('メッセージまたは画像を入力してください');
                 return;
             }
+
+            const newMoment = {
+                id: 'local_' + Date.now(),
+                userId: currentUserId,
+                userName: currentUser ? currentUser.name : 'ユーザー',
+                userAvatar: currentUser ? currentUser.avatar : AVATAR_PRESETS[0],
+                userStatus: currentUser ? currentUser.status : '',
+                text: text,
+                imageUrl: selectedPresetPhoto || null,
+                roomKey: isInRoom ? currentRoomKey : null,
+                likes: 0,
+                likedUsers: [],
+                createdAt: Date.now()
+            };
+
+            // Instant optimistic render
+            roomMoments.unshift(newMoment);
+            if (input) input.value = '';
+            window.clearSelectedPhoto();
+            renderMomentsFeed();
+            window.showToast('投稿をシェアしました✨');
 
             try {
                 const momentDoc = doc(getPublicCollection('loom_moments'));
@@ -962,12 +860,8 @@
                     likedUsers: [],
                     createdAt: Date.now()
                 });
-
-                if (input) input.value = '';
-                window.clearSelectedPhoto();
-                window.showToast('投稿をシェアしました✨');
             } catch (err) {
-                window.showToast('投稿の送信に失敗しました');
+                console.error("Publish Moment Error:", err);
             }
         };
 
