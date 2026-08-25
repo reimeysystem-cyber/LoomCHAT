@@ -211,8 +211,9 @@
                 <!-- TAB: MESSAGES VIEW -->
                 <div id="tab-messages" class="hidden space-y-4">
                     <h2 class="text-xl font-bold">Messages</h2>
-                    <div id="messagesTabContent" class="bg-loom-card rounded-3xl border border-loom-border p-6 text-center text-loom-textMuted">
-                        右側の「Messages」リストから会話したい相手を選択してください。
+                    <!-- Dynamic Messages Content Area -->
+                    <div id="messagesTabContent" class="bg-loom-card rounded-3xl border border-loom-border p-5 space-y-4 shadow-sm">
+                        <!-- Dynamic content rendered based on isInRoom -->
                     </div>
                 </div>
 
@@ -230,11 +231,13 @@
                 <!-- MESSAGES PANEL -->
                 <section class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-4">
                     <div class="flex justify-between items-center">
-                        <h2 class="font-bold text-base">Messages</h2>
+                        <h2 id="sidebarMsgTitle" class="font-bold text-base">Messages</h2>
+                        <span id="sidebarMsgBadge" class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full hidden">Room Chat</span>
                     </div>
 
-                    <div id="directMessagesList" class="space-y-2">
-                        <!-- Chat targets list inserted dynamically -->
+                    <!-- Sidebar Messages Content -->
+                    <div id="sidebarMessagesContainer" class="space-y-3">
+                        <!-- Dynamic list (Room Chat view or DM list view) -->
                     </div>
                 </section>
 
@@ -439,7 +442,6 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Initialize Firebase App with External Window Object, Global Env, or Safe Fallback
         const defaultFirebaseConfig = {
             apiKey: "AIzaSyAtKhahc86s5zg8XfcgqUDiG5BSHLDGh64",
             authDomain: "minecraft-2d284.firebaseapp.com",
@@ -465,6 +467,16 @@
         let isAdminMode = false;
         let selectedPresetPhoto = null;
 
+        let roomUsers = [];
+        let roomMoments = [];
+        let roomMessages = [];
+        let friendRequests = [];
+
+        let unsubPresence = null;
+        let unsubMoments = null;
+        let unsubMessages = null;
+        let unsubFriends = null;
+
         // Notification Settings & Tracking
         let notificationsEnabled = true;
         let isInitialMessagesLoad = true;
@@ -472,115 +484,12 @@
         let knownMessageIds = new Set();
         let knownFriendReqIds = new Set();
 
-        // User Profile Data
-        let currentUser = {
-            id: '',
-            name: '',
-            status: '集中モード',
-            time: '~ 18:00',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-            lastNameChange: 0
-        };
-
-        // Local cache key definitions
-        const LOCAL_STORAGE_PROFILE_KEY = 'loom_user_profile_v2';
-        const LOCAL_STORAGE_MOMENTS_KEY = 'loom_local_moments_cache';
-        const LOCAL_STORAGE_NOTIF_KEY = 'loom_notifications_enabled';
-
-        // Sound generator via Web Audio API
-        function playNotificationSound() {
-            if (!notificationsEnabled) return;
-            try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
-                const ctx = new AudioCtx();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
-
-                gain.gain.setValueAtTime(0.1, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                osc.start();
-                osc.stop(ctx.currentTime + 0.3);
-            } catch (err) {
-                console.warn("Audio playback failed:", err);
-            }
+        function getPublicDoc(colName, docId) {
+            return doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
         }
 
-        window.toggleNotifications = function(enabled) {
-            notificationsEnabled = enabled;
-            try {
-                localStorage.setItem(LOCAL_STORAGE_NOTIF_KEY, JSON.stringify(notificationsEnabled));
-            } catch(e){}
-            showToast(notificationsEnabled ? 'リアルタイム通知を有効にしました' : '通知をオフに設定しました');
-        };
-
-        function loadLocalDataCache() {
-            try {
-                const savedProfile = localStorage.getItem(LOCAL_STORAGE_PROFILE_KEY);
-                if (savedProfile) {
-                    currentUser = { ...currentUser, ...JSON.parse(savedProfile) };
-                }
-                const savedMoments = localStorage.getItem(LOCAL_STORAGE_MOMENTS_KEY);
-                if (savedMoments) {
-                    roomMoments = JSON.parse(savedMoments);
-                }
-                const savedNotif = localStorage.getItem(LOCAL_STORAGE_NOTIF_KEY);
-                if (savedNotif !== null) {
-                    notificationsEnabled = JSON.parse(savedNotif);
-                }
-            } catch (err) {
-                console.warn("Failed to load local storage cache:", err);
-            }
-        }
-
-        function saveLocalProfileCache() {
-            try {
-                localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(currentUser));
-            } catch (err) {
-                console.warn("Failed to save profile cache:", err);
-            }
-        }
-
-        function saveLocalMomentsCache(momentsList) {
-            try {
-                localStorage.setItem(LOCAL_STORAGE_MOMENTS_KEY, JSON.stringify(momentsList.slice(0, 30)));
-            } catch (err) {
-                console.warn("Failed to save moments cache:", err);
-            }
-        }
-
-        async function initAuth() {
-            loadLocalDataCache();
-
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                currentUserId = auth.currentUser ? auth.currentUser.uid : 'user_' + Math.random().toString(36).substring(2, 9);
-            } catch (err) {
-                console.error("Auth init error:", err);
-                currentUserId = 'user_' + Math.random().toString(36).substring(2, 9);
-            }
-            currentUser.id = currentUserId;
-
-            if (!currentUser.name) {
-                currentUser.name = 'User_' + currentUserId.substring(0, 4);
-            }
-
-            saveLocalProfileCache();
-            updateProfileUI();
-            renderAvatarPresets();
-            joinRoom(currentRoomKey);
+        function getPublicCollection(colName) {
+            return collection(db, 'artifacts', appId, 'public', 'data', colName);
         }
 
         window.joinCustomRoom = function() {
@@ -597,13 +506,13 @@
             isInRoom = false;
             updateRoomHeaderUI();
 
-            if (unsubPresence) unsubPresence();
-            if (unsubMessages) unsubMessages();
-
-            roomUsers = [];
+            // Clear room specific messages
+            roomMessages = [];
+            
+            updateUserPresence();
             renderFriendsCarousel();
             renderMembersList();
-            renderDirectMessagesList();
+            renderMessagesViews();
 
             showToast('ルームから退出しました (個人モード)');
         };
@@ -621,6 +530,7 @@
             setupMessagesListener();
             setupFriendsListener();
 
+            renderMessagesViews();
             showToast(`ルーム "${roomKey}" に参加しました`);
         }
 
@@ -632,7 +542,7 @@
             if (isInRoom) {
                 dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
                 label.innerText = currentRoomKey;
-                btnLeave.className = "bg-gray-200 text-loom-text text-xs px-2.5 py-1 rounded-xl hover:bg-gray-300 transition-all font-medium";
+                btnLeave.className = "bg-gray-200 text-loom-text text-xs px-2.5 py-1 rounded-xl hover:bg-gray-300 transition-all font-medium cursor-pointer";
             } else {
                 dot.className = "w-2.5 h-2.5 rounded-full bg-gray-400";
                 label.innerText = "個人モード（未参加）";
@@ -640,423 +550,203 @@
             }
         }
 
-        async function updateUserPresence() {
-            if (!currentUserId) return;
-            try {
-                await setDoc(getPublicDoc('loom_presence', currentUserId), {
-                    userId: currentUserId,
-                    name: currentUser.name,
-                    status: currentUser.status,
-                    time: currentUser.time,
-                    avatar: currentUser.avatar,
-                    roomKey: isInRoom ? currentRoomKey : 'none',
-                    lastSeen: Date.now()
-                }, { merge: true });
-            } catch (err) {
-                console.error("Failed to update presence:", err);
-            }
-        }
-
-        function setupPresenceListener() {
-            if (unsubPresence) unsubPresence();
-
-            unsubPresence = onSnapshot(getPublicCollection('loom_presence'), (snapshot) => {
-                roomUsers = [];
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    if (isInRoom && data.roomKey === currentRoomKey && data.userId !== currentUserId) {
-                        roomUsers.push(data);
-                    }
-                });
-                renderFriendsCarousel();
-                renderMembersList();
-                renderDirectMessagesList();
-            }, (error) => console.error("Presence error:", error));
-        }
-
-        function setupMomentsListener() {
-            if (unsubMoments) unsubMoments();
-
-            unsubMoments = onSnapshot(getPublicCollection('loom_moments'), (snapshot) => {
-                roomMoments = [];
-                const myFriendIds = getAcceptedFriendIds();
-
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const isMyOwnPost = data.userId === currentUserId;
-                    const isFriendPost = myFriendIds.includes(data.userId);
-                    const isSameRoomPost = isInRoom && data.roomKey === currentRoomKey;
-
-                    if (isSameRoomPost || isFriendPost || isMyOwnPost) {
-                        roomMoments.push({ id: docSnap.id, ...data });
-                    }
-                });
-
-                roomMoments.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                saveLocalMomentsCache(roomMoments);
-
-                renderFeed();
-                if (isAdminMode) renderAdminMomentsList();
-            }, (error) => console.error("Moments error:", error));
-        }
-
         function setupMessagesListener() {
             if (unsubMessages) unsubMessages();
 
             unsubMessages = onSnapshot(getPublicCollection('loom_messages'), (snapshot) => {
                 roomMessages = [];
-                let hasNewDirectMsg = false;
+                let hasNewMsg = false;
                 let senderName = "誰か";
 
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
                     const msgId = docSnap.id;
 
-                    if (data.senderId === currentUserId || data.receiverId === currentUserId) {
-                        roomMessages.push({ id: msgId, ...data });
-
-                        // Check for incoming new message
-                        if (!isInitialMessagesLoad && data.receiverId === currentUserId && !knownMessageIds.has(msgId)) {
-                            hasNewDirectMsg = true;
-                            // Find sender name if possible
-                            const senderObj = roomUsers.find(u => u.userId === data.senderId);
-                            if (senderObj) senderName = senderObj.name;
+                    if (isInRoom) {
+                        // Room Mode: Only accept group chat messages for currentRoomKey
+                        if (data.msgType === 'room' && data.roomKey === currentRoomKey) {
+                            roomMessages.push({ id: msgId, ...data });
+                            if (!isInitialMessagesLoad && data.senderId !== currentUserId && !knownMessageIds.has(msgId)) {
+                                hasNewMsg = true;
+                                senderName = data.senderName || "メンバー";
+                            }
+                            knownMessageIds.add(msgId);
                         }
-                        knownMessageIds.add(msgId);
+                    } else {
+                        // Personal Mode: Only accept 1-on-1 Direct Messages
+                        if (data.msgType === 'direct' && (data.senderId === currentUserId || data.receiverId === currentUserId)) {
+                            roomMessages.push({ id: msgId, ...data });
+                            if (!isInitialMessagesLoad && data.receiverId === currentUserId && !knownMessageIds.has(msgId)) {
+                                hasNewMsg = true;
+                                senderName = data.senderName || "フレンド";
+                            }
+                            knownMessageIds.add(msgId);
+                        }
                     }
                 });
 
                 if (isInitialMessagesLoad) {
                     isInitialMessagesLoad = false;
-                } else if (hasNewDirectMsg && notificationsEnabled) {
+                } else if (hasNewMsg && notificationsEnabled) {
                     playNotificationSound();
-                    showToast(`💬 ${escapeHtml(senderName)} から新着メッセージが届きました`);
+                    showToast(`💬 ${escapeHtml(senderName)} からメッセージが届きました`);
                 }
 
                 roomMessages.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-                if (activeChatUserId) {
-                    renderChatMessages();
-                }
-                renderDirectMessagesList();
+                renderMessagesViews();
                 updateMessagesBadge();
             }, (error) => console.error("Messages error:", error));
         }
 
-        function setupFriendsListener() {
-            if (unsubFriends) unsubFriends();
+        function renderMessagesViews() {
+            const sidebarTitle = document.getElementById('sidebarMsgTitle');
+            const sidebarBadge = document.getElementById('sidebarMsgBadge');
+            const sidebarContainer = document.getElementById('sidebarMessagesContainer');
+            const tabContent = document.getElementById('messagesTabContent');
 
-            unsubFriends = onSnapshot(getPublicCollection('loom_friends'), (snapshot) => {
-                friendRequests = [];
-                let hasNewFriendReq = false;
-
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const reqId = docSnap.id;
-
-                    if (data.toUserId === currentUserId || data.fromUserId === currentUserId) {
-                        friendRequests.push({ id: reqId, ...data });
-
-                        if (!isInitialFriendsLoad && data.toUserId === currentUserId && data.status === 'pending' && !knownFriendReqIds.has(reqId)) {
-                            hasNewFriendReq = true;
-                        }
-                        knownFriendReqIds.add(reqId);
-                    }
-                });
-
-                if (isInitialFriendsLoad) {
-                    isInitialFriendsLoad = false;
-                } else if (hasNewFriendReq && notificationsEnabled) {
-                    playNotificationSound();
-                    showToast(`🤝 新しいフレンド申請が届きました！`);
+            if (isInRoom) {
+                // --- ROOM MODE UI ---
+                if (sidebarTitle) sidebarTitle.innerText = `Room Chat (${currentRoomKey})`;
+                if (sidebarBadge) {
+                    sidebarBadge.innerText = "接続中";
+                    sidebarBadge.classList.remove('hidden');
                 }
 
-                renderFriendRequests();
-                renderMembersList();
-            }, (error) => console.error("Friends error:", error));
-        }
+                // Render Chat Feed in Sidebar
+                if (sidebarContainer) {
+                    const chatHtml = roomMessages.length === 0 
+                        ? `<p class="text-xs text-loom-textMuted text-center py-4">まだメッセージはありません。<br>会話を始めましょう！</p>`
+                        : roomMessages.map(m => `
+                            <div class="text-xs space-y-1 ${m.senderId === currentUserId ? 'text-right' : 'text-left'}">
+                                <div class="flex items-center space-x-1.5 ${m.senderId === currentUserId ? 'justify-end' : 'justify-start'}">
+                                    <span class="font-semibold text-[11px] text-loom-textMuted">${escapeHtml(m.senderName)}</span>
+                                    <span class="text-[9px] text-gray-400">${formatTimestamp(m.createdAt)}</span>
+                                </div>
+                                <div class="inline-block px-3 py-2 rounded-2xl ${m.senderId === currentUserId ? 'bg-loom-primary text-white' : 'bg-loom-cardAlt text-loom-text'} text-xs break-words max-w-[85%] text-left">
+                                    ${escapeHtml(m.text)}
+                                </div>
+                            </div>
+                        `).join('');
 
-        function updateMessagesBadge() {
-            const hasUnread = roomMessages.some(m => m.receiverId === currentUserId && activeChatUserId !== m.senderId);
-            const badge = document.getElementById('msgUnreadBadge');
-            const mobBadge = document.getElementById('mobMsgBadge');
+                    sidebarContainer.innerHTML = `
+                        <div class="max-h-60 overflow-y-auto space-y-2.5 pr-1 hide-scrollbar" id="roomChatSidebarList">
+                            ${chatHtml}
+                        </div>
+                        <div class="flex gap-2 pt-2 border-t border-loom-border">
+                            <input type="text" id="inputRoomChatSidebar" placeholder="ルームへ送信..." class="flex-1 bg-loom-bg px-3 py-1.5 rounded-xl text-xs outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') sendRoomMessage('inputRoomChatSidebar')">
+                            <button onclick="sendRoomMessage('inputRoomChatSidebar')" class="bg-loom-primary text-white text-xs px-3 py-1.5 rounded-xl hover:bg-loom-primaryHover font-medium"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    `;
 
-            if (badge) badge.classList.toggle('hidden', !hasUnread);
-            if (mobBadge) mobBadge.classList.toggle('hidden', !hasUnread);
-        }
-
-        function renderFriendRequests() {
-            const container = document.getElementById('friendRequestsList');
-            const pending = friendRequests.filter(r => r.toUserId === currentUserId && r.status === 'pending');
-
-            const badge = document.getElementById('friendReqBadge');
-            const mobBadge = document.getElementById('mobFriendBadge');
-
-            if (pending.length > 0) {
-                if (badge) {
-                    badge.innerText = pending.length;
-                    badge.classList.remove('hidden');
+                    // Auto scroll to bottom
+                    const listEl = document.getElementById('roomChatSidebarList');
+                    if (listEl) listEl.scrollTop = listEl.scrollHeight;
                 }
-                if (mobBadge) {
-                    mobBadge.innerText = pending.length;
-                    mobBadge.classList.remove('hidden');
+
+                // Messages Tab Main View for Room
+                if (tabContent) {
+                    tabContent.innerHTML = `
+                        <div class="flex items-center justify-between pb-3 border-b border-loom-border">
+                            <div>
+                                <h3 class="font-bold text-base">ルームチャット: ${escapeHtml(currentRoomKey)}</h3>
+                                <p class="text-xs text-loom-textMuted">同じルームキーの全員とリアルタイムで会話できます</p>
+                            </div>
+                            <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-full">🟢 ルーム参加中</span>
+                        </div>
+                        <div id="roomChatTabList" class="h-80 overflow-y-auto space-y-3 p-2 bg-loom-bg/50 rounded-2xl hide-scrollbar">
+                            ${roomMessages.length === 0 ? '<p class="text-xs text-loom-textMuted text-center pt-10">メッセージがありません</p>' : roomMessages.map(m => `
+                                <div class="flex items-start space-x-2 ${m.senderId === currentUserId ? 'flex-row-reverse space-x-reverse' : ''}">
+                                    <img src="${m.senderAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'}" class="w-8 h-8 rounded-full object-cover">
+                                    <div class="${m.senderId === currentUserId ? 'items-end' : 'items-start'} flex flex-col max-w-[70%]">
+                                        <span class="text-[10px] text-loom-textMuted mb-0.5">${escapeHtml(m.senderName)} • ${formatTimestamp(m.createdAt)}</span>
+                                        <div class="px-3.5 py-2 rounded-2xl text-xs ${m.senderId === currentUserId ? 'bg-loom-primary text-white' : 'bg-loom-card text-loom-text border border-loom-border'}">
+                                            ${escapeHtml(m.text)}
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="flex gap-2 pt-2">
+                            <input type="text" id="inputRoomChatTab" placeholder="ルーム全員へメッセージ..." class="flex-1 bg-loom-bg px-4 py-2.5 rounded-2xl text-sm outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') sendRoomMessage('inputRoomChatTab')">
+                            <button onclick="sendRoomMessage('inputRoomChatTab')" class="bg-loom-primary text-white px-5 py-2.5 rounded-2xl text-xs font-semibold hover:bg-loom-primaryHover transition-all">送信</button>
+                        </div>
+                    `;
+
+                    const tabListEl = document.getElementById('roomChatTabList');
+                    if (tabListEl) tabListEl.scrollTop = tabListEl.scrollHeight;
                 }
+
             } else {
-                if (badge) badge.classList.add('hidden');
-                if (mobBadge) mobBadge.classList.add('hidden');
-            }
+                // --- PERSONAL / OFFLINE MODE UI ---
+                if (sidebarTitle) sidebarTitle.innerText = "Messages (個人DM)";
+                if (sidebarBadge) sidebarBadge.classList.add('hidden');
 
-            if (pending.length === 0) {
-                container.innerHTML = `<p class="text-xs text-loom-textMuted">届いているフレンド申請はありません</p>`;
+                if (sidebarContainer) {
+                    renderDirectMessagesList();
+                }
+
+                if (tabContent) {
+                    tabContent.innerHTML = `
+                        <div class="text-center py-8 text-loom-textMuted space-y-3">
+                            <i class="fa-regular fa-comments text-4xl text-loom-textMuted/50"></i>
+                            <h3 class="font-bold text-sm text-loom-text">個人メッセージ (Direct Messages)</h3>
+                            <p class="text-xs max-w-sm mx-auto">ルームに未参加（個人モード）です。右側のリストまたは「Friends」タブから個別チャットを開くことができます。</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        window.sendRoomMessage = async function(inputId) {
+            if (!isInRoom) {
+                showToast('ルームに参加していません');
                 return;
             }
-
-            container.innerHTML = pending.map(req => `
-                <div class="flex items-center justify-between p-3 bg-loom-cardAlt rounded-2xl text-xs">
-                    <span>新しいフレンド申請が届いています</span>
-                    <div class="space-x-1">
-                        <button onclick="respondFriendRequest('${req.id}', 'accepted')" class="bg-loom-primary text-white px-2.5 py-1 rounded-xl font-bold">承認</button>
-                        <button onclick="respondFriendRequest('${req.id}', 'rejected')" class="bg-gray-300 text-loom-text px-2.5 py-1 rounded-xl">拒否</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        window.respondFriendRequest = async function(reqId, newStatus) {
-            try {
-                await updateDoc(getPublicDoc('loom_friends', reqId), { status: newStatus });
-                showToast(newStatus === 'accepted' ? 'フレンド申請を承認しました' : '申請を拒否しました');
-            } catch (err) {
-                console.error("Respond req error:", err);
-            }
-        };
-
-        window.openProfileModal = function() {
-            document.getElementById('inputProfileName').value = currentUser.name;
-            document.getElementById('inputProfileStatus').value = currentUser.status;
-            document.getElementById('inputProfileTime').value = currentUser.time;
-
-            const notifToggle = document.getElementById('inputNotificationToggle');
-            if (notifToggle) notifToggle.checked = notificationsEnabled;
-
-            const now = Date.now();
-            const cooldownMs = 24 * 60 * 60 * 1000;
-            const timeDiff = now - (currentUser.lastNameChange || 0);
-
-            const nameInput = document.getElementById('inputProfileName');
-            const cooldownTimer = document.getElementById('nameCooldownTimer');
-
-            if (currentUser.lastNameChange && timeDiff < cooldownMs) {
-                nameInput.disabled = true;
-                const hoursLeft = Math.ceil((cooldownMs - timeDiff) / (1000 * 60 * 60));
-                cooldownTimer.innerText = `変更不可 (残り約 ${hoursLeft} 時間)`;
-            } else {
-                nameInput.disabled = false;
-                cooldownTimer.innerText = "変更可能";
-            }
-
-            document.getElementById('profileModal').classList.remove('hidden');
-        };
-
-        window.closeProfileModal = function() {
-            document.getElementById('profileModal').classList.add('hidden');
-        };
-
-        window.saveProfileSettings = async function() {
-            const newName = document.getElementById('inputProfileName').value.trim();
-            const newStatus = document.getElementById('inputProfileStatus').value;
-            const newTime = document.getElementById('inputProfileTime').value.trim();
-
-            if (newName && newName !== currentUser.name && !document.getElementById('inputProfileName').disabled) {
-                currentUser.name = newName;
-                currentUser.lastNameChange = Date.now();
-            }
-
-            currentUser.status = newStatus || currentUser.status;
-            currentUser.time = newTime || currentUser.time;
-
-            saveLocalProfileCache();
-            updateProfileUI();
-            await updateUserPresence();
-
-            closeProfileModal();
-            showToast('プロフィールを更新・保存しました');
-        };
-
-        function updateProfileUI() {
-            document.getElementById('myNameText').innerText = currentUser.name;
-            document.getElementById('myStatusText').innerText = currentUser.status;
-            document.getElementById('myAvatarImg').src = currentUser.avatar;
-        }
-
-        function renderAvatarPresets() {
-            const container = document.getElementById('avatarPresetsContainer');
-            container.innerHTML = presetAvatars.map(url => `
-                <img src="${url}" onclick="selectAvatarPreset('${url}')" class="w-12 h-12 rounded-full object-cover cursor-pointer border-2 hover:border-loom-primary transition-all flex-shrink-0 ${currentUser.avatar === url ? 'border-loom-primary' : 'border-transparent'}">
-            `).join('');
-        }
-
-        window.selectAvatarPreset = function(url) {
-            currentUser.avatar = url;
-            renderAvatarPresets();
-        };
-
-        window.selectPresetPhotoModal = function() {
-            document.getElementById('photoSelectModal').classList.remove('hidden');
-        };
-
-        window.closePhotoModal = function() {
-            document.getElementById('photoSelectModal').classList.add('hidden');
-        };
-
-        window.attachPhoto = function(url) {
-            selectedPresetPhoto = url;
-            document.getElementById('previewPhotoImg').src = url;
-            document.getElementById('selectedPhotoPreview').classList.remove('hidden');
-            closePhotoModal();
-        };
-
-        window.clearSelectedPhoto = function() {
-            selectedPresetPhoto = null;
-            document.getElementById('selectedPhotoPreview').classList.add('hidden');
-        };
-
-        // ADMIN MODE
-        window.openAdminModal = function() {
-            document.getElementById('adminModal').classList.remove('hidden');
-        };
-
-        window.closeAdminModal = function() {
-            document.getElementById('adminModal').classList.add('hidden');
-        };
-
-        window.verifyAdminPassword = function() {
-            const input = document.getElementById('adminPasswordInput').value;
-            if (input === 'admin123') {
-                isAdminMode = true;
-                document.getElementById('adminLoginSection').classList.add('hidden');
-                document.getElementById('adminControlSection').classList.remove('hidden');
-                document.getElementById('adminStatusLabel').innerText = "管理者 (ログイン中)";
-                renderFeed();
-                renderAdminMomentsList();
-                showToast('管理者としてログインしました');
-            } else {
-                showToast('パスワードが正しくありません');
-            }
-        };
-
-        window.sendAdminAnnouncement = async function() {
-            const text = document.getElementById('adminAnnounceInput').value.trim();
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const text = input.value.trim();
             if (!text) return;
 
             try {
-                const docRef = doc(getPublicCollection('loom_moments'));
-                await setDoc(docRef, {
-                    userId: 'admin_system',
-                    userName: '【システムアナウンス】',
-                    userAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=120&q=80',
-                    content: text,
+                const msgDoc = doc(getPublicCollection('loom_messages'));
+                await setDoc(msgDoc, {
+                    msgType: 'room',
                     roomKey: currentRoomKey,
+                    senderId: currentUserId,
+                    senderName: currentUser.name,
+                    senderAvatar: currentUser.avatar,
+                    text: text,
                     createdAt: Date.now()
                 });
-                document.getElementById('adminAnnounceInput').value = '';
-                showToast('システムアナウンスを配信しました');
+                input.value = '';
             } catch (err) {
-                console.error("Admin announce error:", err);
+                console.error("Send room message error:", err);
+                showToast("送信に失敗しました");
             }
         };
 
-        function renderAdminMomentsList() {
-            const container = document.getElementById('adminMomentsList');
-            if (roomMoments.length === 0) {
-                container.innerHTML = `<p class="text-loom-textMuted">削除可能な投稿はありません</p>`;
-                return;
+        window.sendDirectMessage = async function() {
+            if (!activeChatUserId) return;
+            const input = document.getElementById('chatInputText');
+            const text = input ? input.value.trim() : '';
+            if (!text) return;
+
+            try {
+                const msgDoc = doc(getPublicCollection('loom_messages'));
+                await setDoc(msgDoc, {
+                    msgType: 'direct',
+                    senderId: currentUserId,
+                    senderName: currentUser.name,
+                    receiverId: activeChatUserId,
+                    text: text,
+                    createdAt: Date.now()
+                });
+                if (input) input.value = '';
+            } catch (err) {
+                console.error("Send direct message error:", err);
             }
-
-            container.innerHTML = roomMoments.map(m => `
-                <div class="flex items-center justify-between p-2 bg-loom-bg rounded-xl border border-loom-border">
-                    <span class="truncate max-w-[200px]">${escapeHtml(m.userName)}: ${escapeHtml(m.content)}</span>
-                    <button onclick="deletePost('${m.id}')" class="bg-red-600 text-white px-2 py-0.5 rounded-lg text-[10px]">削除</button>
-                </div>
-            `).join('');
-        }
-
-        window.switchTab = function(tabName) {
-            ['home', 'friends', 'messages', 'moments'].forEach(t => {
-                const el = document.getElementById(`tab-${t}`);
-                const nav = document.getElementById(`nav-${t}`);
-                const mobNav = document.getElementById(`mob-nav-${t}`);
-
-                if (el) el.classList.add('hidden');
-                if (nav) {
-                    nav.classList.remove('bg-loom-cardAlt', 'text-loom-text');
-                    nav.classList.add('text-loom-textMuted');
-                }
-                if (mobNav) {
-                    mobNav.classList.remove('text-loom-text');
-                    mobNav.classList.add('text-loom-textMuted');
-                }
-            });
-
-            const targetEl = document.getElementById(`tab-${tabName}`);
-            const targetNav = document.getElementById(`nav-${tabName}`);
-            const targetMobNav = document.getElementById(`mob-nav-${tabName}`);
-
-            if (targetEl) targetEl.classList.remove('hidden');
-            if (targetNav) {
-                targetNav.classList.add('bg-loom-cardAlt', 'text-loom-text');
-                targetNav.classList.remove('text-loom-textMuted');
-            }
-            if (targetMobNav) {
-                targetMobNav.classList.add('text-loom-text');
-                targetMobNav.classList.remove('text-loom-textMuted');
-            }
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.showToast = function(msg) {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = "bg-loom-text text-white px-4 py-2.5 rounded-2xl text-xs shadow-lg transition-all transform translate-y-2 opacity-0 pointer-events-auto flex items-center space-x-2";
-            toast.innerHTML = `<i class="fa-solid fa-circle-info text-emerald-400"></i><span>${escapeHtml(msg)}</span>`;
-            
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        };
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        function escapeJs(str) {
-            if (!str) return '';
-            return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
-        }
-
-        function formatTimestamp(ts) {
-            if (!ts) return 'たった今';
-            const diffMin = Math.floor((Date.now() - ts) / 60000);
-            if (diffMin < 1) return 'たった今';
-            if (diffMin < 60) return `${diffMin}分前`;
-            const diffHour = Math.floor(diffMin / 60);
-            if (diffHour < 24) return `${diffHour}時間前`;
-            return `${Math.floor(diffHour / 24)}日前`;
-        }
-
-        // Window startup execution
         window.onload = function() {
             initAuth();
         };
