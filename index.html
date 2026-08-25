@@ -50,10 +50,10 @@
         }
     </style>
 </head>
-<body class="bg-loom-bg text-loom-text antialiased min-h-screen">
+<body class="bg-loom-bg text-loom-text antialiased min-h-screen pb-16 md:pb-0">
     <div id="app" class="flex min-h-screen">
         
-        <!-- SIDEBAR NAVIGATION -->
+        <!-- SIDEBAR NAVIGATION (DESKTOP) -->
         <aside class="w-64 border-r border-loom-border bg-loom-bg flex flex-col justify-between p-6 fixed h-full z-20 hidden md:flex">
             <div>
                 <!-- Brand Logo -->
@@ -75,9 +75,10 @@
                         <span>Friends</span>
                         <span id="friendReqBadge" class="hidden ml-auto bg-loom-accent text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
                     </button>
-                    <button id="nav-messages" onclick="switchTab('messages')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all">
+                    <button id="nav-messages" onclick="switchTab('messages')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all relative">
                         <i class="fa-regular fa-comment-dots w-5 text-center"></i>
                         <span>Messages</span>
+                        <span id="msgUnreadBadge" class="hidden ml-auto bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">●</span>
                     </button>
                     <button id="nav-moments" onclick="switchTab('moments')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all">
                         <i class="fa-regular fa-heart w-5 text-center"></i>
@@ -117,19 +118,19 @@
             <!-- CENTRAL FEED AREA -->
             <div class="flex-1 space-y-6">
                 <!-- TOP HEADER BAR -->
-                <header class="flex flex-wrap items-center justify-between gap-4 pb-2">
+                <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2">
                     <div>
                         <h1 class="text-2xl font-bold">Home</h1>
                         <p class="text-xs text-loom-textMuted">つながりを、もっと心地よく。</p>
                     </div>
 
                     <!-- Room Key Controls -->
-                    <div class="flex items-center gap-2 bg-loom-card px-3 py-1.5 rounded-2xl border border-loom-border shadow-sm text-sm">
-                        <div class="flex items-center space-x-1.5">
+                    <div class="flex flex-wrap items-center gap-2 bg-loom-card p-2 sm:px-3 sm:py-1.5 rounded-2xl border border-loom-border shadow-sm text-sm w-full sm:w-auto">
+                        <div class="flex items-center space-x-1.5 mr-auto sm:mr-0">
                             <span id="roomStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                            <span id="roomStatusLabel" class="text-xs font-semibold text-loom-text">loom-lounge</span>
+                            <span id="roomStatusLabel" class="text-xs font-semibold text-loom-text truncate max-w-[100px] sm:max-w-none">loom-lounge</span>
                         </div>
-                        <input type="text" id="inputRoomKey" placeholder="Room Key..." class="w-28 bg-loom-bg px-2 py-1 rounded-xl text-xs outline-none border border-transparent focus:border-loom-primary">
+                        <input type="text" id="inputRoomKey" placeholder="Room Key..." class="flex-1 sm:flex-initial w-24 sm:w-28 bg-loom-bg px-2 py-1 rounded-xl text-xs outline-none border border-transparent focus:border-loom-primary">
                         <button onclick="joinCustomRoom()" class="bg-loom-primary text-white text-xs px-2.5 py-1 rounded-xl hover:bg-loom-primaryHover transition-all font-medium">参加</button>
                         <button id="btnLeaveRoom" onclick="leaveRoom()" class="bg-gray-200 text-loom-text text-xs px-2.5 py-1 rounded-xl hover:bg-gray-300 transition-all font-medium">退出</button>
                     </div>
@@ -249,11 +250,37 @@
         </main>
     </div>
 
+    <!-- MOBILE BOTTOM NAVIGATION (SP ONLY) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-loom-card border-t border-loom-border flex justify-around items-center py-2 px-1 z-30 shadow-lg">
+        <button id="mob-nav-home" onclick="switchTab('home')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-text">
+            <i class="fa-solid fa-house text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Home</span>
+        </button>
+        <button id="mob-nav-friends" onclick="switchTab('friends')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted relative">
+            <i class="fa-solid fa-user-group text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Friends</span>
+            <span id="mobFriendBadge" class="hidden absolute top-0 right-3 bg-loom-accent text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
+        </button>
+        <button id="mob-nav-messages" onclick="switchTab('messages')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted relative">
+            <i class="fa-regular fa-comment-dots text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Messages</span>
+            <span id="mobMsgBadge" class="hidden absolute top-0 right-3 bg-emerald-500 text-white text-[9px] w-2 h-2 rounded-full"></span>
+        </button>
+        <button id="mob-nav-moments" onclick="switchTab('moments')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted">
+            <i class="fa-regular fa-heart text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Moments</span>
+        </button>
+        <button onclick="openProfileModal()" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted">
+            <i class="fa-regular fa-user text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Profile</span>
+        </button>
+    </nav>
+
     <!-- PROFILE & NAME EDIT MODAL -->
     <div id="profileModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-loom-card max-w-md w-full rounded-3xl p-6 shadow-xl space-y-4 border border-loom-border">
+        <div class="bg-loom-card max-w-md w-full rounded-3xl p-6 shadow-xl space-y-4 border border-loom-border max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-loom-border pb-3">
-                <h3 class="font-bold text-lg">プロフィール設定</h3>
+                <h3 class="font-bold text-lg">プロフィール・通知設定</h3>
                 <button onclick="closeProfileModal()" class="text-loom-textMuted hover:text-loom-text"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
@@ -293,6 +320,18 @@
                 <div>
                     <label class="block font-semibold mb-1 text-xs text-loom-textMuted">終了予定時間</label>
                     <input type="text" id="inputProfileTime" placeholder="~ 18:00" class="w-full bg-loom-bg px-3 py-2 rounded-xl border border-loom-border outline-none">
+                </div>
+
+                <!-- Notification Settings Toggle -->
+                <div class="pt-3 border-t border-loom-border">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <span class="text-xs font-semibold text-loom-text block">リアルタイム通知</span>
+                            <span class="text-[10px] text-loom-textMuted block">DMやフレンド申請が届いたときに通知と音でお知らせ</span>
+                        </div>
+                        <input type="checkbox" id="inputNotificationToggle" class="sr-only peer" onchange="toggleNotifications(this.checked)">
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-loom-primary relative"></div>
+                    </label>
                 </div>
             </div>
 
@@ -426,6 +465,13 @@
         let isAdminMode = false;
         let selectedPresetPhoto = null;
 
+        // Notification Settings & Tracking
+        let notificationsEnabled = true;
+        let isInitialMessagesLoad = true;
+        let isInitialFriendsLoad = true;
+        let knownMessageIds = new Set();
+        let knownFriendReqIds = new Set();
+
         // User Profile Data
         let currentUser = {
             id: '',
@@ -439,31 +485,42 @@
         // Local cache key definitions
         const LOCAL_STORAGE_PROFILE_KEY = 'loom_user_profile_v2';
         const LOCAL_STORAGE_MOMENTS_KEY = 'loom_local_moments_cache';
+        const LOCAL_STORAGE_NOTIF_KEY = 'loom_notifications_enabled';
 
-        const presetAvatars = [
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-            'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
-            'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
-            'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80',
-            'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80'
-        ];
+        // Sound generator via Web Audio API
+        function playNotificationSound() {
+            if (!notificationsEnabled) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
 
-        // Active listeners for clean unsubscribing
-        let unsubPresence = null;
-        let unsubMoments = null;
-        let unsubMessages = null;
-        let unsubFriends = null;
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
 
-        // In-memory data synced from Firestore & LocalStorage
-        let roomUsers = [];
-        let roomMoments = [];
-        let roomMessages = [];
-        let friendRequests = [];
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
 
-        // Firestore Public Collection Helpers
-        const getPublicCollection = (colName) => collection(db, 'artifacts', appId, 'public', 'data', colName);
-        const getPublicDoc = (colName, docId) => doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } catch (err) {
+                console.warn("Audio playback failed:", err);
+            }
+        }
+
+        window.toggleNotifications = function(enabled) {
+            notificationsEnabled = enabled;
+            try {
+                localStorage.setItem(LOCAL_STORAGE_NOTIF_KEY, JSON.stringify(notificationsEnabled));
+            } catch(e){}
+            showToast(notificationsEnabled ? 'リアルタイム通知を有効にしました' : '通知をオフに設定しました');
+        };
 
         function loadLocalDataCache() {
             try {
@@ -474,6 +531,10 @@
                 const savedMoments = localStorage.getItem(LOCAL_STORAGE_MOMENTS_KEY);
                 if (savedMoments) {
                     roomMoments = JSON.parse(savedMoments);
+                }
+                const savedNotif = localStorage.getItem(LOCAL_STORAGE_NOTIF_KEY);
+                if (savedNotif !== null) {
+                    notificationsEnabled = JSON.parse(savedNotif);
                 }
             } catch (err) {
                 console.warn("Failed to load local storage cache:", err);
@@ -644,17 +705,40 @@
 
             unsubMessages = onSnapshot(getPublicCollection('loom_messages'), (snapshot) => {
                 roomMessages = [];
+                let hasNewDirectMsg = false;
+                let senderName = "誰か";
+
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
+                    const msgId = docSnap.id;
+
                     if (data.senderId === currentUserId || data.receiverId === currentUserId) {
-                        roomMessages.push({ id: docSnap.id, ...data });
+                        roomMessages.push({ id: msgId, ...data });
+
+                        // Check for incoming new message
+                        if (!isInitialMessagesLoad && data.receiverId === currentUserId && !knownMessageIds.has(msgId)) {
+                            hasNewDirectMsg = true;
+                            // Find sender name if possible
+                            const senderObj = roomUsers.find(u => u.userId === data.senderId);
+                            if (senderObj) senderName = senderObj.name;
+                        }
+                        knownMessageIds.add(msgId);
                     }
                 });
+
+                if (isInitialMessagesLoad) {
+                    isInitialMessagesLoad = false;
+                } else if (hasNewDirectMsg && notificationsEnabled) {
+                    playNotificationSound();
+                    showToast(`💬 ${escapeHtml(senderName)} から新着メッセージが届きました`);
+                }
+
                 roomMessages.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                 if (activeChatUserId) {
                     renderChatMessages();
                 }
                 renderDirectMessagesList();
+                updateMessagesBadge();
             }, (error) => console.error("Messages error:", error));
         }
 
@@ -663,283 +747,62 @@
 
             unsubFriends = onSnapshot(getPublicCollection('loom_friends'), (snapshot) => {
                 friendRequests = [];
+                let hasNewFriendReq = false;
+
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
+                    const reqId = docSnap.id;
+
                     if (data.toUserId === currentUserId || data.fromUserId === currentUserId) {
-                        friendRequests.push({ id: docSnap.id, ...data });
+                        friendRequests.push({ id: reqId, ...data });
+
+                        if (!isInitialFriendsLoad && data.toUserId === currentUserId && data.status === 'pending' && !knownFriendReqIds.has(reqId)) {
+                            hasNewFriendReq = true;
+                        }
+                        knownFriendReqIds.add(reqId);
                     }
                 });
+
+                if (isInitialFriendsLoad) {
+                    isInitialFriendsLoad = false;
+                } else if (hasNewFriendReq && notificationsEnabled) {
+                    playNotificationSound();
+                    showToast(`🤝 新しいフレンド申請が届きました！`);
+                }
+
                 renderFriendRequests();
                 renderMembersList();
             }, (error) => console.error("Friends error:", error));
         }
 
-        function getAcceptedFriendIds() {
-            const ids = [];
-            friendRequests.forEach(req => {
-                if (req.status === 'accepted') {
-                    if (req.fromUserId === currentUserId) ids.push(req.toUserId);
-                    if (req.toUserId === currentUserId) ids.push(req.fromUserId);
-                }
-            });
-            return ids;
+        function updateMessagesBadge() {
+            const hasUnread = roomMessages.some(m => m.receiverId === currentUserId && activeChatUserId !== m.senderId);
+            const badge = document.getElementById('msgUnreadBadge');
+            const mobBadge = document.getElementById('mobMsgBadge');
+
+            if (badge) badge.classList.toggle('hidden', !hasUnread);
+            if (mobBadge) mobBadge.classList.toggle('hidden', !hasUnread);
         }
-
-        function renderFriendsCarousel() {
-            const container = document.getElementById('friendsStatusCarousel');
-            const badge = document.getElementById('onlineCountBadge');
-
-            badge.innerText = `${roomUsers.length} online`;
-
-            if (roomUsers.length === 0) {
-                container.innerHTML = `
-                    <div class="p-6 bg-loom-card rounded-2xl text-xs text-loom-textMuted w-full text-center border border-loom-border">
-                        ${isInRoom ? '現在このルームに他のメンバーはいません。Room Keyを友達に共有してみよう！' : '個人モード中です。ルームに参加するとメンバーが表示されます。'}
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = roomUsers.map(user => `
-                <div class="min-w-[150px] bg-loom-card p-4 rounded-3xl border border-loom-border shadow-sm flex flex-col items-center text-center space-y-2">
-                    <div class="relative">
-                        <img src="${user.avatar || presetAvatars[0]}" class="w-16 h-16 rounded-full object-cover border-2 border-loom-cardAlt">
-                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white"></span>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-xs truncate max-w-[120px]">${escapeHtml(user.name)}</h4>
-                        <p class="text-[11px] text-loom-textMuted mt-0.5 truncate">${escapeHtml(user.status || 'オンライン')}</p>
-                        <p class="text-[10px] text-loom-textMuted/70">${escapeHtml(user.time || '')}</p>
-                    </div>
-                    <button onclick="openChatModal('${user.userId}', '${escapeJs(user.name)}', '${escapeJs(user.avatar)}')" class="bg-loom-cardAlt hover:bg-loom-primary hover:text-white text-loom-text text-xs py-1 px-3 rounded-xl transition-all font-medium w-full">
-                        メッセージ
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        function renderFeed() {
-            const container = document.getElementById('timelineFeed');
-            const momentsOnly = document.getElementById('momentsOnlyFeed');
-
-            if (roomMoments.length === 0) {
-                const emptyHTML = `
-                    <div class="bg-loom-card p-8 rounded-3xl border border-loom-border text-center text-loom-textMuted text-xs">
-                        まだ投稿はありません。「今、どんな気分？」から最初のMomentsを投稿してみましょう！
-                    </div>
-                `;
-                container.innerHTML = emptyHTML;
-                if (momentsOnly) momentsOnly.innerHTML = emptyHTML;
-                return;
-            }
-
-            const html = roomMoments.map(post => `
-                <article class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-3">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <img src="${post.userAvatar || presetAvatars[0]}" class="w-10 h-10 rounded-full object-cover">
-                            <div>
-                                <h4 class="font-bold text-sm">${escapeHtml(post.userName)}</h4>
-                                <p class="text-[10px] text-loom-textMuted">${formatTimestamp(post.createdAt)}</p>
-                            </div>
-                        </div>
-                        ${post.userId === currentUserId || isAdminMode ? `
-                            <button onclick="deletePost('${post.id}')" class="text-loom-textMuted hover:text-red-500 text-xs">
-                                <i class="fa-regular fa-trash-can"></i>
-                            </button>
-                        ` : ''}
-                    </div>
-
-                    <p class="text-sm whitespace-pre-line leading-relaxed">${escapeHtml(post.content)}</p>
-
-                    ${post.photoUrl ? `
-                        <img src="${post.photoUrl}" class="w-full max-h-80 object-cover rounded-2xl border border-loom-border">
-                    ` : ''}
-                </article>
-            `).join('');
-
-            container.innerHTML = html;
-            if (momentsOnly) momentsOnly.innerHTML = html;
-        }
-
-        window.publishMoment = async function() {
-            const input = document.getElementById('momentInputText');
-            const text = input.value.trim();
-
-            if (!text && !selectedPresetPhoto) {
-                showToast('投稿内容を入力してください');
-                return;
-            }
-
-            try {
-                const docRef = doc(getPublicCollection('loom_moments'));
-                const newPost = {
-                    userId: currentUserId,
-                    userName: currentUser.name,
-                    userAvatar: currentUser.avatar,
-                    content: text,
-                    photoUrl: selectedPresetPhoto || null,
-                    roomKey: currentRoomKey,
-                    createdAt: Date.now()
-                };
-
-                await setDoc(docRef, newPost);
-
-                input.value = '';
-                clearSelectedPhoto();
-                showToast('Momentsを投稿しました');
-            } catch (err) {
-                console.error("Publish error:", err);
-                showToast('投稿の送信に失敗しました');
-            }
-        };
-
-        window.deletePost = async function(postId) {
-            try {
-                await deleteDoc(getPublicDoc('loom_moments', postId));
-                showToast('投稿を削除しました');
-            } catch (err) {
-                console.error("Delete error:", err);
-            }
-        };
-
-        window.openChatModal = function(targetUserId, targetName, targetAvatar) {
-            activeChatUserId = targetUserId;
-            document.getElementById('chatTargetName').innerText = targetName;
-            document.getElementById('chatTargetAvatar').src = targetAvatar || presetAvatars[0];
-            document.getElementById('chatModal').classList.remove('hidden');
-            renderChatMessages();
-        };
-
-        window.closeChatModal = function() {
-            activeChatUserId = null;
-            document.getElementById('chatModal').classList.add('hidden');
-        };
-
-        window.sendDirectMessage = async function() {
-            const input = document.getElementById('chatInputText');
-            const text = input.value.trim();
-            if (!text || !activeChatUserId) return;
-
-            try {
-                const msgRef = doc(getPublicCollection('loom_messages'));
-                await setDoc(msgRef, {
-                    senderId: currentUserId,
-                    receiverId: activeChatUserId,
-                    content: text,
-                    createdAt: Date.now()
-                });
-                input.value = '';
-            } catch (err) {
-                console.error("Send message error:", err);
-            }
-        };
-
-        function renderChatMessages() {
-            const container = document.getElementById('chatMessagesContainer');
-            if (!activeChatUserId) return;
-
-            const filtered = roomMessages.filter(m => 
-                (m.senderId === currentUserId && m.receiverId === activeChatUserId) ||
-                (m.senderId === activeChatUserId && m.receiverId === currentUserId)
-            );
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-center text-xs text-loom-textMuted py-4">メッセージ履歴はまだありません</p>`;
-                return;
-            }
-
-            container.innerHTML = filtered.map(m => {
-                const isMe = m.senderId === currentUserId;
-                return `
-                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                        <div class="max-w-[75%] ${isMe ? 'bg-loom-primary text-white rounded-2xl rounded-tr-none' : 'bg-loom-card text-loom-text rounded-2xl rounded-tl-none border border-loom-border'} p-3 text-xs shadow-sm">
-                            <p>${escapeHtml(m.content)}</p>
-                            <span class="text-[9px] ${isMe ? 'text-white/70' : 'text-loom-textMuted'} block text-right mt-1">${formatTimestamp(m.createdAt)}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function renderDirectMessagesList() {
-            const container = document.getElementById('directMessagesList');
-            const targetUsers = [...roomUsers];
-
-            if (targetUsers.length === 0) {
-                container.innerHTML = `<p class="text-xs text-loom-textMuted text-center py-2">アクティブな会話はありません</p>`;
-                return;
-            }
-
-            container.innerHTML = targetUsers.map(user => `
-                <div onclick="openChatModal('${user.userId}', '${escapeJs(user.name)}', '${escapeJs(user.avatar)}')" class="flex items-center space-x-3 p-2.5 rounded-2xl hover:bg-loom-cardAlt cursor-pointer transition-all">
-                    <img src="${user.avatar || presetAvatars[0]}" class="w-10 h-10 rounded-full object-cover">
-                    <div class="flex-1 truncate">
-                        <h4 class="font-bold text-xs truncate">${escapeHtml(user.name)}</h4>
-                        <p class="text-[11px] text-loom-textMuted truncate">${escapeHtml(user.status || 'オンライン')}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderMembersList() {
-            const container = document.getElementById('roomMembersList');
-            if (!container) return;
-
-            if (roomUsers.length === 0) {
-                container.innerHTML = `<p class="text-xs text-loom-textMuted col-span-2">現在ルーム内に他のメンバーはいません</p>`;
-                return;
-            }
-
-            const myFriendIds = getAcceptedFriendIds();
-
-            container.innerHTML = roomUsers.map(user => {
-                const isFriend = myFriendIds.includes(user.userId);
-                return `
-                    <div class="flex items-center justify-between p-3 bg-loom-bg rounded-2xl border border-loom-border">
-                        <div class="flex items-center space-x-2 truncate">
-                            <img src="${user.avatar || presetAvatars[0]}" class="w-8 h-8 rounded-full object-cover">
-                            <span class="font-bold text-xs truncate">${escapeHtml(user.name)}</span>
-                        </div>
-                        ${isFriend ? `
-                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-1 rounded-xl">フレンド</span>
-                        ` : `
-                            <button onclick="sendFriendRequest('${user.userId}')" class="bg-loom-primary text-white text-[10px] px-2.5 py-1 rounded-xl hover:bg-loom-primaryHover">
-                                申請する
-                            </button>
-                        `}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        window.sendFriendRequest = async function(toUserId) {
-            try {
-                const docRef = doc(getPublicCollection('loom_friends'));
-                await setDoc(docRef, {
-                    fromUserId: currentUserId,
-                    toUserId: toUserId,
-                    status: 'pending',
-                    createdAt: Date.now()
-                });
-                showToast('フレンド申請を送信しました');
-            } catch (err) {
-                console.error("Friend req error:", err);
-            }
-        };
 
         function renderFriendRequests() {
             const container = document.getElementById('friendRequestsList');
             const pending = friendRequests.filter(r => r.toUserId === currentUserId && r.status === 'pending');
 
             const badge = document.getElementById('friendReqBadge');
+            const mobBadge = document.getElementById('mobFriendBadge');
+
             if (pending.length > 0) {
-                badge.innerText = pending.length;
-                badge.classList.remove('hidden');
+                if (badge) {
+                    badge.innerText = pending.length;
+                    badge.classList.remove('hidden');
+                }
+                if (mobBadge) {
+                    mobBadge.innerText = pending.length;
+                    mobBadge.classList.remove('hidden');
+                }
             } else {
-                badge.classList.add('hidden');
+                if (badge) badge.classList.add('hidden');
+                if (mobBadge) mobBadge.classList.add('hidden');
             }
 
             if (pending.length === 0) {
@@ -971,6 +834,9 @@
             document.getElementById('inputProfileName').value = currentUser.name;
             document.getElementById('inputProfileStatus').value = currentUser.status;
             document.getElementById('inputProfileTime').value = currentUser.time;
+
+            const notifToggle = document.getElementById('inputNotificationToggle');
+            if (notifToggle) notifToggle.checked = notificationsEnabled;
 
             const now = Date.now();
             const cooldownMs = 24 * 60 * 60 * 1000;
@@ -1118,20 +984,34 @@
             ['home', 'friends', 'messages', 'moments'].forEach(t => {
                 const el = document.getElementById(`tab-${t}`);
                 const nav = document.getElementById(`nav-${t}`);
+                const mobNav = document.getElementById(`mob-nav-${t}`);
+
                 if (el) el.classList.add('hidden');
                 if (nav) {
                     nav.classList.remove('bg-loom-cardAlt', 'text-loom-text');
                     nav.classList.add('text-loom-textMuted');
                 }
+                if (mobNav) {
+                    mobNav.classList.remove('text-loom-text');
+                    mobNav.classList.add('text-loom-textMuted');
+                }
             });
 
             const targetEl = document.getElementById(`tab-${tabName}`);
             const targetNav = document.getElementById(`nav-${tabName}`);
+            const targetMobNav = document.getElementById(`mob-nav-${tabName}`);
+
             if (targetEl) targetEl.classList.remove('hidden');
             if (targetNav) {
                 targetNav.classList.add('bg-loom-cardAlt', 'text-loom-text');
                 targetNav.classList.remove('text-loom-textMuted');
             }
+            if (targetMobNav) {
+                targetMobNav.classList.add('text-loom-text');
+                targetMobNav.classList.remove('text-loom-textMuted');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
         window.showToast = function(msg) {
