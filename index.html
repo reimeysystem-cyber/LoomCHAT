@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>loom6 - つながりを、もっと心地よく。</title>
+    <title>loom9 - つながりを、もっと心地よく。</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -423,12 +423,69 @@
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
+    <!-- PASSCODE LOCK OVERLAY (身内限定アクセス制限) -->
+    <div id="passcodeGateOverlay" class="fixed inset-0 bg-loom-bg/95 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div class="bg-loom-card max-w-sm w-full rounded-3xl p-6 md:p-8 shadow-2xl border border-loom-border text-center space-y-5">
+            <div class="w-16 h-16 bg-loom-cardAlt text-loom-primary rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            
+            <div class="space-y-1">
+                <h2 class="text-xl font-bold tracking-tight">アクセス制限</h2>
+                <p class="text-xs text-loom-textMuted">このアプリは関係者限定です。<br>利用許可パスコードを入力してください。</p>
+            </div>
+
+            <div class="space-y-3">
+                <input type="password" id="inputAccessPasscode" placeholder="パスコードを入力" class="w-full bg-loom-bg px-4 py-3 rounded-2xl text-center font-mono text-sm border border-loom-border outline-none focus:border-loom-primary transition-all tracking-widest" onkeypress="if(event.key==='Enter') window.verifyAccessPasscode()">
+                <p id="passcodeErrorMsg" class="text-xs text-rose-500 hidden font-medium">パスコードが違います</p>
+                
+                <button onclick="window.verifyAccessPasscode()" class="w-full bg-loom-primary hover:bg-loom-primaryHover text-white py-3 rounded-2xl text-sm font-semibold shadow-sm transition-all">
+                    認証して入場する
+                </button>
+            </div>
+
+            <p class="text-[10px] text-loom-textMuted">※パスコードをお持ちでない方はご利用いただけません</p>
+        </div>
+    </div>
+
     <script src="firebase-config.js" onerror="console.log('firebase-config.js not found. Using default embedded config.')"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const REQUIRED_PASSCODE = "S0291PP3343h34";
+
+        window.verifyAccessPasscode = function() {
+            const input = document.getElementById('inputAccessPasscode');
+            const errorMsg = document.getElementById('passcodeErrorMsg');
+            const passcode = input ? input.value.trim() : '';
+
+            if (passcode === REQUIRED_PASSCODE) {
+                sessionStorage.setItem('loom_passcode_verified', 'true');
+                const gate = document.getElementById('passcodeGateOverlay');
+                if (gate) gate.classList.add('hidden');
+                if (errorMsg) errorMsg.classList.add('hidden');
+                window.showToast('アクセスが許可されました✨');
+            } else {
+                if (errorMsg) errorMsg.classList.remove('hidden');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+            }
+        };
+
+        function checkPasscodeAuth() {
+            const verified = sessionStorage.getItem('loom_passcode_verified');
+            const gate = document.getElementById('passcodeGateOverlay');
+            if (verified === 'true') {
+                if (gate) gate.classList.add('hidden');
+            } else {
+                if (gate) gate.classList.remove('hidden');
+            }
+        }
 
         const defaultFirebaseConfig = {
             apiKey: "AIzaSyAtKhahc86s5zg8XfcgqUDiG5BSHLDGh64",
@@ -1375,6 +1432,8 @@
 
                 updateMyProfileUI();
                 window.switchTab('home');
+
+                checkPasscodeAuth();
 
                 await updateUserPresence();
                 setupPresenceListener();
