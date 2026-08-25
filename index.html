@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>loom - つながりを、もっと心地よく。</title>
+    <title>loom3 - つながりを、もっと心地よく。</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -32,7 +32,7 @@
         }
     </script>
 
-    <!-- Font Awesome & Lucide Icons -->
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -57,30 +57,30 @@
         <aside class="w-64 border-r border-loom-border bg-loom-bg flex flex-col justify-between p-6 fixed h-full z-20 hidden md:flex">
             <div>
                 <!-- Brand Logo -->
-                <div class="flex items-center space-x-3 mb-10 px-2 cursor-pointer" onclick="switchTab('home')">
+                <div class="flex items-center space-x-3 mb-10 px-2 cursor-pointer" onclick="window.switchTab('home')">
                     <div class="w-8 h-8 rounded-full bg-loom-primary flex items-center justify-center text-white font-semibold">
-                        <i class="fa-solid fa-[#4A5B47] fa-clover"></i>
-                        <span class="text-lg font-bold tracking-wider">loom</span>
+                        <i class="fa-solid fa-clover"></i>
                     </div>
+                    <span class="text-xl font-bold tracking-wider">loom</span>
                 </div>
 
                 <!-- Navigation Links -->
                 <nav class="space-y-1">
-                    <button id="nav-home" onclick="switchTab('home')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl bg-loom-cardAlt font-medium text-loom-text transition-all">
+                    <button id="nav-home" onclick="window.switchTab('home')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl bg-loom-cardAlt font-medium text-loom-text transition-all">
                         <i class="fa-solid fa-house w-5 text-center"></i>
                         <span>Home</span>
                     </button>
-                    <button id="nav-friends" onclick="switchTab('friends')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all">
+                    <button id="nav-friends" onclick="window.switchTab('friends')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all">
                         <i class="fa-solid fa-user-group w-5 text-center"></i>
                         <span>Friends</span>
                         <span id="friendReqBadge" class="hidden ml-auto bg-loom-accent text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
                     </button>
-                    <button id="nav-messages" onclick="switchTab('messages')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all relative">
+                    <button id="nav-messages" onclick="window.switchTab('messages')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all relative">
                         <i class="fa-regular fa-comment-dots w-5 text-center"></i>
                         <span>Messages</span>
                         <span id="msgUnreadBadge" class="hidden ml-auto bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">●</span>
                     </button>
-                    <button id="nav-moments" onclick="switchTab('moments')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all">
+                    <button id="nav-moments" onclick="window.switchTab('moments')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all">
                         <i class="fa-regular fa-heart w-5 text-center"></i>
                         <span>Moments</span>
                     </button>
@@ -89,7 +89,7 @@
 
             <!-- Profile & Admin Switch -->
             <div class="space-y-2 pt-4 border-t border-loom-border">
-                <div onclick="openProfileModal()" class="flex items-center justify-between p-2 rounded-2xl hover:bg-loom-cardAlt cursor-pointer transition-all">
+                <div onclick="window.openProfileModal()" class="flex items-center justify-between p-2 rounded-2xl hover:bg-loom-cardAlt cursor-pointer transition-all">
                     <div class="flex items-center space-x-3">
                         <img id="myAvatarImg" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-10 h-10 rounded-full object-cover border border-white shadow-sm" alt="User Avatar">
                         <div class="truncate max-w-[100px]">
@@ -101,11 +101,11 @@
                 </div>
 
                 <div class="flex justify-between px-2 pt-2 text-loom-textMuted">
-                    <button onclick="openAdminModal()" class="hover:text-loom-primary text-xs flex items-center space-x-1">
+                    <button onclick="window.openAdminModal()" class="hover:text-loom-primary text-xs flex items-center space-x-1">
                         <i class="fa-solid fa-user-shield"></i>
                         <span id="adminStatusLabel">管理者モード</span>
                     </button>
-                    <button onclick="openProfileModal()" class="hover:text-loom-primary text-xs">
+                    <button onclick="window.openProfileModal()" class="hover:text-loom-primary text-xs">
                         <i class="fa-solid fa-gear"></i>
                     </button>
                 </div>
@@ -130,9 +130,9 @@
                             <span id="roomStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                             <span id="roomStatusLabel" class="text-xs font-semibold text-loom-text truncate max-w-[100px] sm:max-w-none">loom-lounge</span>
                         </div>
-                        <input type="text" id="inputRoomKey" placeholder="Room Key..." class="flex-1 sm:flex-initial w-24 sm:w-28 bg-loom-bg px-2 py-1 rounded-xl text-xs outline-none border border-transparent focus:border-loom-primary">
-                        <button onclick="joinCustomRoom()" class="bg-loom-primary text-white text-xs px-2.5 py-1 rounded-xl hover:bg-loom-primaryHover transition-all font-medium">参加</button>
-                        <button id="btnLeaveRoom" onclick="leaveRoom()" class="bg-gray-200 text-loom-text text-xs px-2.5 py-1 rounded-xl hover:bg-gray-300 transition-all font-medium">退出</button>
+                        <input type="text" id="inputRoomKey" placeholder="Room Key..." value="loom-lounge" class="flex-1 sm:flex-initial w-24 sm:w-28 bg-loom-bg px-2 py-1 rounded-xl text-xs outline-none border border-transparent focus:border-loom-primary">
+                        <button onclick="window.joinCustomRoom()" class="bg-loom-primary text-white text-xs px-2.5 py-1 rounded-xl hover:bg-loom-primaryHover transition-all font-medium">参加</button>
+                        <button id="btnLeaveRoom" onclick="window.leaveRoom()" class="bg-gray-200 text-loom-text text-xs px-2.5 py-1 rounded-xl hover:bg-gray-300 transition-all font-medium">退出</button>
                     </div>
                 </header>
 
@@ -145,7 +145,7 @@
                                 <h2 class="font-bold text-base">Friends Status</h2>
                                 <span id="onlineCountBadge" class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">0 online</span>
                             </div>
-                            <button onclick="switchTab('friends')" class="text-xs text-loom-textMuted hover:text-loom-primary">すべて見る</button>
+                            <button onclick="window.switchTab('friends')" class="text-xs text-loom-textMuted hover:text-loom-primary">すべて見る</button>
                         </div>
 
                         <div id="friendsStatusCarousel" class="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
@@ -161,21 +161,21 @@
                         <!-- Selected Photo Preview -->
                         <div id="selectedPhotoPreview" class="hidden relative inline-block">
                             <img id="previewPhotoImg" src="" class="h-20 w-20 object-cover rounded-2xl border">
-                            <button onclick="clearSelectedPhoto()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"><i class="fa-solid fa-xmark"></i></button>
+                            <button onclick="window.clearSelectedPhoto()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"><i class="fa-solid fa-xmark"></i></button>
                         </div>
 
                         <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-loom-border/50 text-xs text-loom-textMuted">
                             <div class="flex space-x-3">
-                                <button onclick="selectPresetPhotoModal()" class="hover:text-loom-primary flex items-center space-x-1 px-2 py-1 rounded-lg hover:bg-loom-cardAlt">
+                                <button onclick="window.selectPresetPhotoModal()" class="hover:text-loom-primary flex items-center space-x-1 px-2 py-1 rounded-lg hover:bg-loom-cardAlt">
                                     <i class="fa-regular fa-image text-emerald-600"></i>
                                     <span>写真</span>
                                 </button>
-                                <button onclick="showToast('気分タグ機能を適用しました')" class="hover:text-loom-primary flex items-center space-x-1 px-2 py-1 rounded-lg hover:bg-loom-cardAlt">
+                                <button onclick="window.showToast('気分タグを適用しました')" class="hover:text-loom-primary flex items-center space-x-1 px-2 py-1 rounded-lg hover:bg-loom-cardAlt">
                                     <i class="fa-regular fa-face-smile text-amber-500"></i>
                                     <span>気分</span>
                                 </button>
                             </div>
-                            <button onclick="publishMoment()" class="bg-loom-primary hover:bg-loom-primaryHover text-white px-5 py-2 rounded-2xl font-semibold shadow-sm transition-all">
+                            <button onclick="window.publishMoment()" class="bg-loom-primary hover:bg-loom-primaryHover text-white px-5 py-2 rounded-2xl font-semibold shadow-sm transition-all">
                                 シェア
                             </button>
                         </div>
@@ -201,7 +201,7 @@
 
                     <!-- Active Room Members & Friends list -->
                     <div class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-4">
-                        <h3 class="font-bold text-sm">同じルームのメンバー</h3>
+                        <h3 class="font-bold text-sm">メンバー・フレンド一覧</h3>
                         <div id="roomMembersList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <!-- Members inserted dynamically -->
                         </div>
@@ -211,9 +211,8 @@
                 <!-- TAB: MESSAGES VIEW -->
                 <div id="tab-messages" class="hidden space-y-4">
                     <h2 class="text-xl font-bold">Messages</h2>
-                    <!-- Dynamic Messages Content Area -->
                     <div id="messagesTabContent" class="bg-loom-card rounded-3xl border border-loom-border p-5 space-y-4 shadow-sm">
-                        <!-- Dynamic content rendered based on isInRoom -->
+                        <!-- Dynamic content rendered -->
                     </div>
                 </div>
 
@@ -237,7 +236,7 @@
 
                     <!-- Sidebar Messages Content -->
                     <div id="sidebarMessagesContainer" class="space-y-3">
-                        <!-- Dynamic list (Room Chat view or DM list view) -->
+                        <!-- Dynamic list -->
                     </div>
                 </section>
 
@@ -255,25 +254,25 @@
 
     <!-- MOBILE BOTTOM NAVIGATION (SP ONLY) -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-loom-card border-t border-loom-border flex justify-around items-center py-2 px-1 z-30 shadow-lg">
-        <button id="mob-nav-home" onclick="switchTab('home')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-text">
+        <button id="mob-nav-home" onclick="window.switchTab('home')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-text">
             <i class="fa-solid fa-house text-lg"></i>
             <span class="text-[10px] font-medium mt-0.5">Home</span>
         </button>
-        <button id="mob-nav-friends" onclick="switchTab('friends')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted relative">
+        <button id="mob-nav-friends" onclick="window.switchTab('friends')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted relative">
             <i class="fa-solid fa-user-group text-lg"></i>
             <span class="text-[10px] font-medium mt-0.5">Friends</span>
             <span id="mobFriendBadge" class="hidden absolute top-0 right-3 bg-loom-accent text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
         </button>
-        <button id="mob-nav-messages" onclick="switchTab('messages')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted relative">
+        <button id="mob-nav-messages" onclick="window.switchTab('messages')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted relative">
             <i class="fa-regular fa-comment-dots text-lg"></i>
             <span class="text-[10px] font-medium mt-0.5">Messages</span>
             <span id="mobMsgBadge" class="hidden absolute top-0 right-3 bg-emerald-500 text-white text-[9px] w-2 h-2 rounded-full"></span>
         </button>
-        <button id="mob-nav-moments" onclick="switchTab('moments')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted">
+        <button id="mob-nav-moments" onclick="window.switchTab('moments')" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted">
             <i class="fa-regular fa-heart text-lg"></i>
             <span class="text-[10px] font-medium mt-0.5">Moments</span>
         </button>
-        <button onclick="openProfileModal()" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted">
+        <button onclick="window.openProfileModal()" class="flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted">
             <i class="fa-regular fa-user text-lg"></i>
             <span class="text-[10px] font-medium mt-0.5">Profile</span>
         </button>
@@ -284,7 +283,7 @@
         <div class="bg-loom-card max-w-md w-full rounded-3xl p-6 shadow-xl space-y-4 border border-loom-border max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-loom-border pb-3">
                 <h3 class="font-bold text-lg">プロフィール・通知設定</h3>
-                <button onclick="closeProfileModal()" class="text-loom-textMuted hover:text-loom-text"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button onclick="window.closeProfileModal()" class="text-loom-textMuted hover:text-loom-text"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <div class="space-y-4 text-sm">
@@ -332,15 +331,15 @@
                             <span class="text-xs font-semibold text-loom-text block">リアルタイム通知</span>
                             <span class="text-[10px] text-loom-textMuted block">DMやフレンド申請が届いたときに通知と音でお知らせ</span>
                         </div>
-                        <input type="checkbox" id="inputNotificationToggle" class="sr-only peer" onchange="toggleNotifications(this.checked)">
+                        <input type="checkbox" id="inputNotificationToggle" checked class="sr-only peer" onchange="window.toggleNotifications(this.checked)">
                         <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-loom-primary relative"></div>
                     </label>
                 </div>
             </div>
 
             <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeProfileModal()" class="px-4 py-2 rounded-xl text-xs text-loom-textMuted hover:bg-loom-cardAlt">キャンセル</button>
-                <button onclick="saveProfileSettings()" class="bg-loom-primary text-white px-5 py-2 rounded-xl text-xs font-semibold hover:bg-loom-primaryHover">保存する</button>
+                <button onclick="window.closeProfileModal()" class="px-4 py-2 rounded-xl text-xs text-loom-textMuted hover:bg-loom-cardAlt">キャンセル</button>
+                <button onclick="window.saveProfileSettings()" class="bg-loom-primary text-white px-5 py-2 rounded-xl text-xs font-semibold hover:bg-loom-primaryHover">保存する</button>
             </div>
         </div>
     </div>
@@ -357,7 +356,7 @@
                         <span id="chatTargetStatus" class="text-xs text-loom-textMuted">オフライン</span>
                     </div>
                 </div>
-                <button onclick="closeChatModal()" class="text-loom-textMuted hover:text-loom-text"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button onclick="window.closeChatModal()" class="text-loom-textMuted hover:text-loom-text"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <!-- Messages area -->
@@ -367,8 +366,8 @@
 
             <!-- Input area -->
             <div class="p-3 border-t border-loom-border flex items-center space-x-2 bg-loom-card rounded-b-3xl">
-                <input type="text" id="chatInputText" placeholder="メッセージを入力..." class="flex-1 bg-loom-bg px-4 py-2.5 rounded-2xl text-sm outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') sendDirectMessage()">
-                <button onclick="sendDirectMessage()" class="bg-loom-primary text-white w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-loom-primaryHover transition-all">
+                <input type="text" id="chatInputText" placeholder="メッセージを入力..." class="flex-1 bg-loom-bg px-4 py-2.5 rounded-2xl text-sm outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') window.sendDirectMessage()">
+                <button onclick="window.sendDirectMessage()" class="bg-loom-primary text-white w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-loom-primaryHover transition-all">
                     <i class="fa-solid fa-paper-plane text-sm"></i>
                 </button>
             </div>
@@ -380,13 +379,13 @@
         <div class="bg-loom-card max-w-md w-full rounded-3xl p-6 shadow-xl space-y-4 border border-loom-border">
             <div class="flex justify-between items-center border-b border-loom-border pb-3">
                 <h3 class="font-bold text-base">画像を選択</h3>
-                <button onclick="closePhotoModal()" class="text-loom-textMuted"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button onclick="window.closePhotoModal()" class="text-loom-textMuted"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
-                <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80" onclick="attachPhoto('https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
-                <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" onclick="attachPhoto('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
-                <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80" onclick="attachPhoto('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
-                <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80" onclick="attachPhoto('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
+                <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80" onclick="window.attachPhoto('https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
+                <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" onclick="window.attachPhoto('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
+                <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80" onclick="window.attachPhoto('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
+                <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80" onclick="window.attachPhoto('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
             </div>
         </div>
     </div>
@@ -396,13 +395,13 @@
         <div class="bg-loom-card max-w-md w-full rounded-3xl p-6 shadow-xl space-y-4 border border-loom-border">
             <div class="flex justify-between items-center border-b border-loom-border pb-3">
                 <h3 class="font-bold text-lg text-red-600"><i class="fa-solid fa-shield-halved mr-1"></i> 管理者モード</h3>
-                <button onclick="closeAdminModal()" class="text-loom-textMuted"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button onclick="window.closeAdminModal()" class="text-loom-textMuted"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <div id="adminLoginSection" class="space-y-3">
                 <p class="text-xs text-loom-textMuted">管理者パスワードを入力してください (初期設定: admin123)</p>
                 <input type="password" id="adminPasswordInput" placeholder="パスワード" class="w-full bg-loom-bg px-3 py-2 rounded-xl border border-loom-border outline-none">
-                <button onclick="verifyAdminPassword()" class="w-full bg-red-600 text-white py-2 rounded-xl text-xs font-bold hover:bg-red-700">認証</button>
+                <button onclick="window.verifyAdminPassword()" class="w-full bg-red-600 text-white py-2 rounded-xl text-xs font-bold hover:bg-red-700">認証</button>
             </div>
 
             <div id="adminControlSection" class="hidden space-y-4">
@@ -414,32 +413,21 @@
                     <label class="block text-xs font-bold mb-1">システムアナウンス送信</label>
                     <div class="flex gap-2">
                         <input type="text" id="adminAnnounceInput" placeholder="全ユーザーへメッセージ..." class="flex-1 bg-loom-bg px-3 py-2 rounded-xl text-xs border border-loom-border outline-none">
-                        <button onclick="sendAdminAnnouncement()" class="bg-loom-primary text-white px-3 py-2 rounded-xl text-xs font-bold">配信</button>
-                    </div>
-                </div>
-
-                <div>
-                    <h4 class="text-xs font-bold mb-2">投稿の強制削除・管理</h4>
-                    <div id="adminMomentsList" class="max-h-40 overflow-y-auto space-y-2 text-xs">
-                        <!-- Admin post controls -->
+                        <button onclick="window.sendAdminAnnouncement()" class="bg-loom-primary text-white px-3 py-2 rounded-xl text-xs font-bold">配信</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATION SYSTEM -->
+    <!-- TOAST NOTIFICATION CONTAINER -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-    <!-- 
-      External config support for GitHub & Firebase 
-    -->
-    <script src="firebase-config.js" onerror="console.log('firebase-config.js not found. Using default fallback configuration.')"></script>
+    <script src="firebase-config.js" onerror="console.log('firebase-config.js not found. Using default embedded config.')"></script>
 
-    <!-- FIREBASE CLIENT SDK SCRIPT MODULE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const defaultFirebaseConfig = {
@@ -460,29 +448,40 @@
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'loom-default-app';
 
+        // Core Application State
         let currentUserId = null;
+        let currentUser = null;
         let currentRoomKey = "loom-lounge";
         let isInRoom = true;
         let activeChatUserId = null;
         let isAdminMode = false;
         let selectedPresetPhoto = null;
+        let selectedAvatarUrl = null;
 
         let roomUsers = [];
         let roomMoments = [];
         let roomMessages = [];
         let friendRequests = [];
+        let myFriends = new Set();
 
         let unsubPresence = null;
         let unsubMoments = null;
         let unsubMessages = null;
         let unsubFriends = null;
 
-        // Notification Settings & Tracking
         let notificationsEnabled = true;
         let isInitialMessagesLoad = true;
         let isInitialFriendsLoad = true;
         let knownMessageIds = new Set();
         let knownFriendReqIds = new Set();
+
+        const AVATAR_PRESETS = [
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80',
+            'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80',
+            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
+            'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=120&q=80'
+        ];
 
         function getPublicDoc(colName, docId) {
             return doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
@@ -492,10 +491,174 @@
             return collection(db, 'artifacts', appId, 'public', 'data', colName);
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatTimestamp(ts) {
+            if (!ts) return '';
+            const date = new Date(ts);
+            const now = new Date();
+            if (date.toDateString() === now.toDateString()) {
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+        }
+
+        window.showToast = function(msg) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = 'bg-loom-text text-white text-xs px-4 py-3 rounded-2xl shadow-lg flex items-center space-x-2 pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0';
+            toast.innerHTML = `<i class="fa-solid fa-bell text-emerald-400"></i><span>${escapeHtml(msg)}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        };
+
+        function playNotificationSound() {
+            if (!notificationsEnabled) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.25);
+            } catch(e) {}
+        }
+
+        window.switchTab = function(tabId) {
+            const tabs = ['home', 'friends', 'messages', 'moments'];
+            tabs.forEach(t => {
+                const navBtn = document.getElementById(`nav-${t}`);
+                const mobBtn = document.getElementById(`mob-nav-${t}`);
+                const tabView = document.getElementById(`tab-${t}`);
+
+                if (t === tabId) {
+                    if (navBtn) navBtn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-2xl bg-loom-cardAlt font-medium text-loom-text transition-all";
+                    if (mobBtn) mobBtn.className = "flex flex-col items-center justify-center flex-1 py-1 text-loom-text";
+                    if (tabView) tabView.classList.remove('hidden');
+                } else {
+                    if (navBtn) navBtn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all";
+                    if (mobBtn) mobBtn.className = "flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted";
+                    if (tabView) tabView.classList.add('hidden');
+                }
+            });
+        };
+
+        window.openProfileModal = function() {
+            if (!currentUser) return;
+            document.getElementById('inputProfileName').value = currentUser.name || '';
+            document.getElementById('inputProfileStatus').value = currentUser.status || '集中モード';
+            document.getElementById('inputProfileTime').value = currentUser.statusTime || '~ 18:00';
+            
+            selectedAvatarUrl = currentUser.avatar;
+            renderAvatarPresets();
+            checkNameCooldownUI();
+
+            document.getElementById('profileModal').classList.remove('hidden');
+        };
+
+        window.closeProfileModal = function() {
+            document.getElementById('profileModal').classList.add('hidden');
+        };
+
+        function renderAvatarPresets() {
+            const container = document.getElementById('avatarPresetsContainer');
+            if (!container) return;
+            container.innerHTML = AVATAR_PRESETS.map(url => `
+                <img src="${url}" onclick="window.selectAvatarPreset('${url}')" 
+                     class="w-12 h-12 rounded-full object-cover cursor-pointer border-2 transition-all ${selectedAvatarUrl === url ? 'border-loom-primary scale-110 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'}">
+            `).join('');
+        }
+
+        window.selectAvatarPreset = function(url) {
+            selectedAvatarUrl = url;
+            renderAvatarPresets();
+        };
+
+        function checkNameCooldownUI() {
+            const input = document.getElementById('inputProfileName');
+            const timerLabel = document.getElementById('nameCooldownTimer');
+            if (!currentUser || !input || !timerLabel) return;
+
+            const now = Date.now();
+            const lastChanged = currentUser.nameLastChanged || 0;
+            const cooldownMs = 24 * 60 * 60 * 1000;
+            const elapsed = now - lastChanged;
+
+            if (lastChanged > 0 && elapsed < cooldownMs) {
+                input.disabled = true;
+                input.classList.add('bg-gray-100', 'cursor-not-allowed');
+                const hoursLeft = Math.ceil((cooldownMs - elapsed) / (1000 * 60 * 60));
+                timerLabel.innerText = `再変更まで残り約${hoursLeft}時間`;
+            } else {
+                input.disabled = false;
+                input.classList.remove('bg-gray-100', 'cursor-not-allowed');
+                timerLabel.innerText = '';
+            }
+        }
+
+        window.saveProfileSettings = async function() {
+            const nameInput = document.getElementById('inputProfileName').value.trim();
+            const statusInput = document.getElementById('inputProfileStatus').value;
+            const timeInput = document.getElementById('inputProfileTime').value.trim();
+
+            if (!nameInput) {
+                window.showToast('名前を入力してください');
+                return;
+            }
+
+            const now = Date.now();
+            let nameChanged = false;
+            if (nameInput !== currentUser.name) {
+                currentUser.name = nameInput;
+                currentUser.nameLastChanged = now;
+                nameChanged = true;
+            }
+
+            currentUser.status = statusInput;
+            currentUser.statusTime = timeInput;
+            if (selectedAvatarUrl) currentUser.avatar = selectedAvatarUrl;
+
+            // Save to LocalStorage & Firestore
+            localStorage.setItem('loom_user_profile_v2', JSON.stringify(currentUser));
+            await updateUserPresence();
+            updateMyProfileUI();
+            window.closeProfileModal();
+            window.showToast('プロフィールを保存しました');
+        };
+
+        window.toggleNotifications = function(enabled) {
+            notificationsEnabled = enabled;
+            window.showToast(enabled ? '通知をオンに設定しました' : '通知をオフに設定しました');
+        };
+
         window.joinCustomRoom = function() {
             const val = document.getElementById('inputRoomKey').value.trim();
             if (!val) {
-                showToast('Room Keyを入力してください');
+                window.showToast('Room Keyを入力してください');
                 return;
             }
             joinRoom(val);
@@ -506,15 +669,13 @@
             isInRoom = false;
             updateRoomHeaderUI();
 
-            // Clear room specific messages
             roomMessages = [];
-            
             updateUserPresence();
             renderFriendsCarousel();
             renderMembersList();
             renderMessagesViews();
 
-            showToast('ルームから退出しました (個人モード)');
+            window.showToast('ルームから退出しました (個人モード)');
         };
 
         async function joinRoom(roomKey) {
@@ -531,7 +692,7 @@
             setupFriendsListener();
 
             renderMessagesViews();
-            showToast(`ルーム "${roomKey}" に参加しました`);
+            window.showToast(`ルーム "${roomKey}" に参加しました`);
         }
 
         function updateRoomHeaderUI() {
@@ -540,19 +701,124 @@
             const btnLeave = document.getElementById('btnLeaveRoom');
 
             if (isInRoom) {
-                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
-                label.innerText = currentRoomKey;
-                btnLeave.className = "bg-gray-200 text-loom-text text-xs px-2.5 py-1 rounded-xl hover:bg-gray-300 transition-all font-medium cursor-pointer";
+                if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+                if (label) label.innerText = currentRoomKey;
+                if (btnLeave) btnLeave.className = "bg-gray-200 text-loom-text text-xs px-2.5 py-1 rounded-xl hover:bg-gray-300 transition-all font-medium cursor-pointer";
             } else {
-                dot.className = "w-2.5 h-2.5 rounded-full bg-gray-400";
-                label.innerText = "個人モード（未参加）";
-                btnLeave.className = "bg-gray-100 text-gray-400 text-xs px-2.5 py-1 rounded-xl cursor-not-allowed";
+                if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-gray-400";
+                if (label) label.innerText = "個人モード（未参加）";
+                if (btnLeave) btnLeave.className = "bg-gray-100 text-gray-400 text-xs px-2.5 py-1 rounded-xl cursor-not-allowed";
             }
+        }
+
+        async function updateUserPresence() {
+            if (!currentUserId || !currentUser) return;
+            try {
+                const userDoc = getPublicDoc('loom_users', currentUserId);
+                await setDoc(userDoc, {
+                    ...currentUser,
+                    roomKey: isInRoom ? currentRoomKey : null,
+                    lastSeen: Date.now()
+                }, { merge: true });
+            } catch(e) { console.error("Update presence error:", e); }
+        }
+
+        function updateMyProfileUI() {
+            if (!currentUser) return;
+            const nameEl = document.getElementById('myNameText');
+            const statusEl = document.getElementById('myStatusText');
+            const avatarEl = document.getElementById('myAvatarImg');
+
+            if (nameEl) nameEl.innerText = currentUser.name;
+            if (statusEl) statusEl.innerText = currentUser.status;
+            if (avatarEl) avatarEl.src = currentUser.avatar;
+        }
+
+        function setupPresenceListener() {
+            if (unsubPresence) unsubPresence();
+            unsubPresence = onSnapshot(getPublicCollection('loom_users'), (snapshot) => {
+                roomUsers = [];
+                snapshot.forEach(d => {
+                    const u = d.data();
+                    if (u.id !== currentUserId) {
+                        if (isInRoom && u.roomKey === currentRoomKey) {
+                            roomUsers.push(u);
+                        } else if (!isInRoom) {
+                            roomUsers.push(u);
+                        }
+                    }
+                });
+                renderFriendsCarousel();
+                renderMembersList();
+            });
+        }
+
+        function renderFriendsCarousel() {
+            const carousel = document.getElementById('friendsStatusCarousel');
+            const badge = document.getElementById('onlineCountBadge');
+            if (!carousel) return;
+
+            if (badge) badge.innerText = `${roomUsers.length} online`;
+
+            if (roomUsers.length === 0) {
+                carousel.innerHTML = `
+                    <div class="bg-loom-card px-6 py-4 rounded-3xl border border-loom-border text-xs text-loom-textMuted text-center w-full">
+                        同じルームのメンバーはまだいません
+                    </div>
+                `;
+                return;
+            }
+
+            carousel.innerHTML = roomUsers.map(u => `
+                <div class="bg-loom-card p-4 rounded-3xl border border-loom-border min-w-[140px] flex flex-col items-center text-center space-y-2 shadow-sm hover:shadow-md transition-all">
+                    <div class="relative">
+                        <img src="${u.avatar || AVATAR_PRESETS[0]}" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow">
+                        <span class="w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full absolute bottom-0 right-0"></span>
+                    </div>
+                    <div class="w-full">
+                        <h4 class="font-bold text-xs truncate">${escapeHtml(u.name)}</h4>
+                        <p class="text-[10px] text-loom-textMuted truncate">${escapeHtml(u.status || 'オンライン')}</p>
+                        <p class="text-[9px] text-gray-400 mt-0.5">${escapeHtml(u.statusTime || '')}</p>
+                    </div>
+                    <button onclick="window.openChatWithUser('${u.id}')" class="w-full bg-loom-cardAlt hover:bg-loom-primary hover:text-white text-loom-text text-[10px] py-1.5 rounded-xl font-medium transition-all">
+                        チャット
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderMembersList() {
+            const list = document.getElementById('roomMembersList');
+            if (!list) return;
+
+            if (roomUsers.length === 0) {
+                list.innerHTML = `<p class="text-xs text-loom-textMuted col-span-2">現在接続しているユーザーはいません</p>`;
+                return;
+            }
+
+            list.innerHTML = roomUsers.map(u => `
+                <div class="flex items-center justify-between p-3 rounded-2xl bg-loom-cardAlt/50 border border-loom-border/60">
+                    <div class="flex items-center space-x-3">
+                        <img src="${u.avatar || AVATAR_PRESETS[0]}" class="w-10 h-10 rounded-full object-cover">
+                        <div>
+                            <h4 class="font-bold text-xs">${escapeHtml(u.name)}</h4>
+                            <span class="text-[10px] text-loom-textMuted">${escapeHtml(u.status || 'オンライン')}</span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-1.5">
+                        <button onclick="window.sendFriendRequest('${u.id}')" class="px-2.5 py-1 bg-loom-primary text-white text-[11px] rounded-xl hover:bg-loom-primaryHover">
+                            + フレンド
+                        </button>
+                        <button onclick="window.openChatWithUser('${u.id}')" class="px-2 py-1 bg-loom-card text-loom-text text-[11px] rounded-xl border border-loom-border">
+                            DM
+                        </button>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function setupMessagesListener() {
             if (unsubMessages) unsubMessages();
-
             unsubMessages = onSnapshot(getPublicCollection('loom_messages'), (snapshot) => {
                 roomMessages = [];
                 let hasNewMsg = false;
@@ -563,7 +829,6 @@
                     const msgId = docSnap.id;
 
                     if (isInRoom) {
-                        // Room Mode: Only accept group chat messages for currentRoomKey
                         if (data.msgType === 'room' && data.roomKey === currentRoomKey) {
                             roomMessages.push({ id: msgId, ...data });
                             if (!isInitialMessagesLoad && data.senderId !== currentUserId && !knownMessageIds.has(msgId)) {
@@ -573,7 +838,6 @@
                             knownMessageIds.add(msgId);
                         }
                     } else {
-                        // Personal Mode: Only accept 1-on-1 Direct Messages
                         if (data.msgType === 'direct' && (data.senderId === currentUserId || data.receiverId === currentUserId)) {
                             roomMessages.push({ id: msgId, ...data });
                             if (!isInitialMessagesLoad && data.receiverId === currentUserId && !knownMessageIds.has(msgId)) {
@@ -587,15 +851,14 @@
 
                 if (isInitialMessagesLoad) {
                     isInitialMessagesLoad = false;
-                } else if (hasNewMsg && notificationsEnabled) {
+                } else if (hasNewMsg) {
                     playNotificationSound();
-                    showToast(`💬 ${escapeHtml(senderName)} からメッセージが届きました`);
+                    window.showToast(`💬 ${escapeHtml(senderName)} からメッセージが届きました`);
                 }
 
                 roomMessages.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
                 renderMessagesViews();
-                updateMessagesBadge();
-            }, (error) => console.error("Messages error:", error));
+            });
         }
 
         function renderMessagesViews() {
@@ -605,14 +868,12 @@
             const tabContent = document.getElementById('messagesTabContent');
 
             if (isInRoom) {
-                // --- ROOM MODE UI ---
                 if (sidebarTitle) sidebarTitle.innerText = `Room Chat (${currentRoomKey})`;
                 if (sidebarBadge) {
                     sidebarBadge.innerText = "接続中";
                     sidebarBadge.classList.remove('hidden');
                 }
 
-                // Render Chat Feed in Sidebar
                 if (sidebarContainer) {
                     const chatHtml = roomMessages.length === 0 
                         ? `<p class="text-xs text-loom-textMuted text-center py-4">まだメッセージはありません。<br>会話を始めましょう！</p>`
@@ -633,17 +894,15 @@
                             ${chatHtml}
                         </div>
                         <div class="flex gap-2 pt-2 border-t border-loom-border">
-                            <input type="text" id="inputRoomChatSidebar" placeholder="ルームへ送信..." class="flex-1 bg-loom-bg px-3 py-1.5 rounded-xl text-xs outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') sendRoomMessage('inputRoomChatSidebar')">
-                            <button onclick="sendRoomMessage('inputRoomChatSidebar')" class="bg-loom-primary text-white text-xs px-3 py-1.5 rounded-xl hover:bg-loom-primaryHover font-medium"><i class="fa-solid fa-paper-plane"></i></button>
+                            <input type="text" id="inputRoomChatSidebar" placeholder="ルームへ送信..." class="flex-1 bg-loom-bg px-3 py-1.5 rounded-xl text-xs outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') window.sendRoomMessage('inputRoomChatSidebar')">
+                            <button onclick="window.sendRoomMessage('inputRoomChatSidebar')" class="bg-loom-primary text-white text-xs px-3 py-1.5 rounded-xl hover:bg-loom-primaryHover font-medium"><i class="fa-solid fa-paper-plane"></i></button>
                         </div>
                     `;
 
-                    // Auto scroll to bottom
                     const listEl = document.getElementById('roomChatSidebarList');
                     if (listEl) listEl.scrollTop = listEl.scrollHeight;
                 }
 
-                // Messages Tab Main View for Room
                 if (tabContent) {
                     tabContent.innerHTML = `
                         <div class="flex items-center justify-between pb-3 border-b border-loom-border">
@@ -656,7 +915,7 @@
                         <div id="roomChatTabList" class="h-80 overflow-y-auto space-y-3 p-2 bg-loom-bg/50 rounded-2xl hide-scrollbar">
                             ${roomMessages.length === 0 ? '<p class="text-xs text-loom-textMuted text-center pt-10">メッセージがありません</p>' : roomMessages.map(m => `
                                 <div class="flex items-start space-x-2 ${m.senderId === currentUserId ? 'flex-row-reverse space-x-reverse' : ''}">
-                                    <img src="${m.senderAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'}" class="w-8 h-8 rounded-full object-cover">
+                                    <img src="${m.senderAvatar || AVATAR_PRESETS[0]}" class="w-8 h-8 rounded-full object-cover">
                                     <div class="${m.senderId === currentUserId ? 'items-end' : 'items-start'} flex flex-col max-w-[70%]">
                                         <span class="text-[10px] text-loom-textMuted mb-0.5">${escapeHtml(m.senderName)} • ${formatTimestamp(m.createdAt)}</span>
                                         <div class="px-3.5 py-2 rounded-2xl text-xs ${m.senderId === currentUserId ? 'bg-loom-primary text-white' : 'bg-loom-card text-loom-text border border-loom-border'}">
@@ -667,30 +926,23 @@
                             `).join('')}
                         </div>
                         <div class="flex gap-2 pt-2">
-                            <input type="text" id="inputRoomChatTab" placeholder="ルーム全員へメッセージ..." class="flex-1 bg-loom-bg px-4 py-2.5 rounded-2xl text-sm outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') sendRoomMessage('inputRoomChatTab')">
-                            <button onclick="sendRoomMessage('inputRoomChatTab')" class="bg-loom-primary text-white px-5 py-2.5 rounded-2xl text-xs font-semibold hover:bg-loom-primaryHover transition-all">送信</button>
+                            <input type="text" id="inputRoomChatTab" placeholder="ルーム全員へメッセージ..." class="flex-1 bg-loom-bg px-4 py-2.5 rounded-2xl text-sm outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') window.sendRoomMessage('inputRoomChatTab')">
+                            <button onclick="window.sendRoomMessage('inputRoomChatTab')" class="bg-loom-primary text-white px-5 py-2.5 rounded-2xl text-xs font-semibold hover:bg-loom-primaryHover transition-all">送信</button>
                         </div>
                     `;
 
                     const tabListEl = document.getElementById('roomChatTabList');
                     if (tabListEl) tabListEl.scrollTop = tabListEl.scrollHeight;
                 }
-
             } else {
-                // --- PERSONAL / OFFLINE MODE UI ---
                 if (sidebarTitle) sidebarTitle.innerText = "Messages (個人DM)";
                 if (sidebarBadge) sidebarBadge.classList.add('hidden');
-
-                if (sidebarContainer) {
-                    renderDirectMessagesList();
-                }
-
                 if (tabContent) {
                     tabContent.innerHTML = `
                         <div class="text-center py-8 text-loom-textMuted space-y-3">
                             <i class="fa-regular fa-comments text-4xl text-loom-textMuted/50"></i>
                             <h3 class="font-bold text-sm text-loom-text">個人メッセージ (Direct Messages)</h3>
-                            <p class="text-xs max-w-sm mx-auto">ルームに未参加（個人モード）です。右側のリストまたは「Friends」タブから個別チャットを開くことができます。</p>
+                            <p class="text-xs max-w-sm mx-auto">「Friends」タブまたは右側メンバーから個別チャットを開くことができます。</p>
                         </div>
                     `;
                 }
@@ -698,10 +950,7 @@
         }
 
         window.sendRoomMessage = async function(inputId) {
-            if (!isInRoom) {
-                showToast('ルームに参加していません');
-                return;
-            }
+            if (!isInRoom) return;
             const input = document.getElementById(inputId);
             if (!input) return;
             const text = input.value.trim();
@@ -719,10 +968,24 @@
                     createdAt: Date.now()
                 });
                 input.value = '';
-            } catch (err) {
-                console.error("Send room message error:", err);
-                showToast("送信に失敗しました");
-            }
+            } catch(e) { window.showToast('送信に失敗しました'); }
+        };
+
+        window.openChatWithUser = function(userId) {
+            const target = roomUsers.find(u => u.id === userId);
+            if (!target) return;
+
+            activeChatUserId = userId;
+            document.getElementById('chatTargetName').innerText = target.name;
+            document.getElementById('chatTargetAvatar').src = target.avatar || AVATAR_PRESETS[0];
+            document.getElementById('chatTargetStatus').innerText = target.status || 'オンライン';
+
+            document.getElementById('chatModal').classList.remove('hidden');
+        };
+
+        window.closeChatModal = function() {
+            document.getElementById('chatModal').classList.add('hidden');
+            activeChatUserId = null;
         };
 
         window.sendDirectMessage = async function() {
@@ -742,19 +1005,15 @@
                     createdAt: Date.now()
                 });
                 if (input) input.value = '';
-            } catch (err) {
-                console.error("Send direct message error:", err);
-            }
+            } catch(e) { window.showToast('送信エラー'); }
         };
 
         window.selectPresetPhotoModal = function() {
-            const modal = document.getElementById('photoSelectModal');
-            if (modal) modal.classList.remove('hidden');
+            document.getElementById('photoSelectModal').classList.remove('hidden');
         };
 
         window.closePhotoModal = function() {
-            const modal = document.getElementById('photoSelectModal');
-            if (modal) modal.classList.add('hidden');
+            document.getElementById('photoSelectModal').classList.add('hidden');
         };
 
         window.attachPhoto = function(url) {
@@ -765,15 +1024,13 @@
                 previewImg.src = url;
                 previewContainer.classList.remove('hidden');
             }
-            closePhotoModal();
+            window.closePhotoModal();
         };
 
         window.clearSelectedPhoto = function() {
             selectedPresetPhoto = null;
             const previewContainer = document.getElementById('selectedPhotoPreview');
-            if (previewContainer) {
-                previewContainer.classList.add('hidden');
-            }
+            if (previewContainer) previewContainer.classList.add('hidden');
         };
 
         window.publishMoment = async function() {
@@ -781,17 +1038,17 @@
             const text = input ? input.value.trim() : '';
 
             if (!text && !selectedPresetPhoto) {
-                showToast('メッセージまたは画像を入力してください');
+                window.showToast('メッセージまたは画像を入力してください');
                 return;
             }
 
             try {
                 const momentDoc = doc(getPublicCollection('loom_moments'));
-                const newMoment = {
+                await setDoc(momentDoc, {
                     id: momentDoc.id,
                     userId: currentUserId,
                     userName: currentUser ? currentUser.name : 'ユーザー',
-                    userAvatar: currentUser ? currentUser.avatar : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+                    userAvatar: currentUser ? currentUser.avatar : AVATAR_PRESETS[0],
                     userStatus: currentUser ? currentUser.status : '',
                     text: text,
                     imageUrl: selectedPresetPhoto || null,
@@ -799,37 +1056,29 @@
                     likes: 0,
                     likedUsers: [],
                     createdAt: Date.now()
-                };
-
-                await setDoc(momentDoc, newMoment);
+                });
 
                 if (input) input.value = '';
-                clearSelectedPhoto();
-                showToast('投稿をシェアしました✨');
+                window.clearSelectedPhoto();
+                window.showToast('投稿をシェアしました✨');
             } catch (err) {
-                console.error("Publish moment error:", err);
-                showToast('投稿の送信に失敗しました');
+                window.showToast('投稿の送信に失敗しました');
             }
         };
 
         function setupMomentsListener() {
             if (unsubMoments) unsubMoments();
-
             unsubMoments = onSnapshot(getPublicCollection('loom_moments'), (snapshot) => {
                 roomMoments = [];
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
                     const momentId = docSnap.id;
-
                     if (isInRoom) {
-                        // Room Mode: Only posts created in currentRoomKey
                         if (data.roomKey === currentRoomKey) {
                             roomMoments.push({ id: momentId, ...data });
                         }
                     } else {
-                        // Personal Mode: Personal non-room posts or my own posts
-                        const isMyPost = data.userId === currentUserId;
-                        if (!data.roomKey || isMyPost) {
+                        if (!data.roomKey || data.userId === currentUserId) {
                             roomMoments.push({ id: momentId, ...data });
                         }
                     }
@@ -837,7 +1086,7 @@
 
                 roomMoments.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
                 renderMomentsFeed();
-            }, (error) => console.error("Moments error:", error));
+            });
         }
 
         function renderMomentsFeed() {
@@ -849,7 +1098,6 @@
                     <div class="bg-loom-card p-8 rounded-3xl border border-loom-border text-center text-loom-textMuted space-y-2">
                         <i class="fa-regular fa-heart text-3xl text-loom-textMuted/40"></i>
                         <p class="text-sm font-medium">まだ投稿がありません</p>
-                        <p class="text-xs">「今、どんな気分？」から最初の投稿をシェアしてみましょう！</p>
                     </div>
                 `;
                 if (feedContainer) feedContainer.innerHTML = emptyHtml;
@@ -865,7 +1113,7 @@
                     <div class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-3">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
-                                <img src="${m.userAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80'}" class="w-10 h-10 rounded-full object-cover border border-white shadow-sm">
+                                <img src="${m.userAvatar || AVATAR_PRESETS[0]}" class="w-10 h-10 rounded-full object-cover border border-white shadow-sm">
                                 <div>
                                     <div class="flex items-center space-x-2">
                                         <h4 class="font-bold text-sm">${escapeHtml(m.userName)}</h4>
@@ -875,22 +1123,21 @@
                                 </div>
                             </div>
                             ${(isMyPost || isAdminMode) ? `
-                                <button onclick="deleteMoment('${m.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">
+                                <button onclick="window.deleteMoment('${m.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             ` : ''}
                         </div>
 
                         ${m.text ? `<p class="text-sm leading-relaxed text-loom-text whitespace-pre-line">${escapeHtml(m.text)}</p>` : ''}
-                        
                         ${m.imageUrl ? `
                             <div class="rounded-2xl overflow-hidden max-h-80 border border-loom-border/50">
-                                <img src="${m.imageUrl}" class="w-full h-full object-cover" alt="Post Image">
+                                <img src="${m.imageUrl}" class="w-full h-full object-cover">
                             </div>
                         ` : ''}
 
                         <div class="flex items-center space-x-4 pt-1 text-xs text-loom-textMuted">
-                            <button onclick="toggleLikeMoment('${m.id}')" class="flex items-center space-x-1.5 ${isLiked ? 'text-rose-500 font-bold' : 'hover:text-rose-500'} transition-colors">
+                            <button onclick="window.toggleLikeMoment('${m.id}')" class="flex items-center space-x-1.5 ${isLiked ? 'text-rose-500 font-bold' : 'hover:text-rose-500'} transition-colors">
                                 <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-sm"></i>
                                 <span>${m.likes || 0}</span>
                             </button>
@@ -906,13 +1153,12 @@
         window.toggleLikeMoment = async function(momentId) {
             const moment = roomMoments.find(m => m.id === momentId);
             if (!moment) return;
-
             const likedUsers = moment.likedUsers || [];
-            const index = likedUsers.indexOf(currentUserId);
+            const idx = likedUsers.indexOf(currentUserId);
             let newLikes = moment.likes || 0;
 
-            if (index > -1) {
-                likedUsers.splice(index, 1);
+            if (idx > -1) {
+                likedUsers.splice(idx, 1);
                 newLikes = Math.max(0, newLikes - 1);
             } else {
                 likedUsers.push(currentUserId);
@@ -924,21 +1170,165 @@
                     likes: newLikes,
                     likedUsers: likedUsers
                 });
-            } catch (err) {
-                console.error("Like toggle error:", err);
-            }
+            } catch(e) {}
         };
 
         window.deleteMoment = async function(momentId) {
-            if (!confirm('この投稿を削除しますか？')) return;
+            if (!confirm('投稿を削除しますか？')) return;
             try {
                 await deleteDoc(getPublicDoc('loom_moments', momentId));
-                showToast('投稿を削除しました');
-            } catch (err) {
-                console.error("Delete moment error:", err);
-                showToast('投稿の削除に失敗しました');
+                window.showToast('投稿を削除しました');
+            } catch(e) { window.showToast('削除に失敗しました'); }
+        };
+
+        window.sendFriendRequest = async function(targetUserId) {
+            try {
+                const reqDoc = doc(getPublicCollection('loom_friend_requests'));
+                await setDoc(reqDoc, {
+                    id: reqDoc.id,
+                    fromId: currentUserId,
+                    fromName: currentUser.name,
+                    fromAvatar: currentUser.avatar,
+                    toId: targetUserId,
+                    status: 'pending',
+                    createdAt: Date.now()
+                });
+                window.showToast('フレンド申請を送信しました！');
+            } catch(e) { window.showToast('申請の送信に失敗しました'); }
+        };
+
+        function setupFriendsListener() {
+            if (unsubFriends) unsubFriends();
+            unsubFriends = onSnapshot(getPublicCollection('loom_friend_requests'), (snapshot) => {
+                friendRequests = [];
+                snapshot.forEach(d => {
+                    const req = d.data();
+                    if (req.toId === currentUserId && req.status === 'pending') {
+                        friendRequests.push(req);
+                    }
+                });
+                renderFriendRequests();
+            });
+        }
+
+        function renderFriendRequests() {
+            const list = document.getElementById('friendRequestsList');
+            const badge = document.getElementById('friendReqBadge');
+            const mobBadge = document.getElementById('mobFriendBadge');
+
+            if (badge) {
+                if (friendRequests.length > 0) {
+                    badge.innerText = friendRequests.length;
+                    badge.classList.remove('hidden');
+                } else badge.classList.add('hidden');
+            }
+            if (mobBadge) {
+                if (friendRequests.length > 0) {
+                    mobBadge.innerText = friendRequests.length;
+                    mobBadge.classList.remove('hidden');
+                } else mobBadge.classList.add('hidden');
+            }
+
+            if (!list) return;
+            if (friendRequests.length === 0) {
+                list.innerHTML = `<p class="text-xs text-loom-textMuted">届いているフレンド申請はありません</p>`;
+                return;
+            }
+
+            list.innerHTML = friendRequests.map(r => `
+                <div class="flex items-center justify-between p-3 bg-loom-bg rounded-2xl border border-loom-border">
+                    <div class="flex items-center space-x-3">
+                        <img src="${r.fromAvatar || AVATAR_PRESETS[0]}" class="w-8 h-8 rounded-full object-cover">
+                        <span class="text-xs font-bold">${escapeHtml(r.fromName)}</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="window.acceptFriendRequest('${r.id}')" class="bg-loom-primary text-white text-xs px-3 py-1 rounded-xl">承認</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.acceptFriendRequest = async function(reqId) {
+            try {
+                await updateDoc(getPublicDoc('loom_friend_requests', reqId), { status: 'accepted' });
+                window.showToast('フレンド申請を承認しました');
+            } catch(e) {}
+        };
+
+        window.openAdminModal = function() {
+            document.getElementById('adminModal').classList.remove('hidden');
+        };
+
+        window.closeAdminModal = function() {
+            document.getElementById('adminModal').classList.add('hidden');
+        };
+
+        window.verifyAdminPassword = function() {
+            const pw = document.getElementById('adminPasswordInput').value;
+            if (pw === 'admin123') {
+                isAdminMode = true;
+                document.getElementById('adminLoginSection').classList.add('hidden');
+                document.getElementById('adminControlSection').classList.remove('hidden');
+                document.getElementById('adminStatusLabel').innerText = "管理者 (ON)";
+                window.showToast('管理者モードでログインしました');
+                renderMomentsFeed();
+            } else {
+                window.showToast('パスワードが違います');
             }
         };
+
+        window.sendAdminAnnouncement = async function() {
+            const input = document.getElementById('adminAnnounceInput');
+            const text = input ? input.value.trim() : '';
+            if (!text) return;
+
+            try {
+                const momentDoc = doc(getPublicCollection('loom_moments'));
+                await setDoc(momentDoc, {
+                    id: momentDoc.id,
+                    userId: 'ADMIN',
+                    userName: '📣 システム管理者アナウンス',
+                    userAvatar: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=120&q=80',
+                    text: text,
+                    roomKey: currentRoomKey,
+                    createdAt: Date.now()
+                });
+                if (input) input.value = '';
+                window.showToast('アナウンスを配信しました');
+            } catch(e) {}
+        };
+
+        async function initAuth() {
+            try {
+                const saved = localStorage.getItem('loom_user_profile_v2');
+                if (saved) {
+                    currentUser = JSON.parse(saved);
+                    currentUserId = currentUser.id;
+                } else {
+                    currentUserId = 'user_' + Math.random().toString(36).substr(2, 9);
+                    currentUser = {
+                        id: currentUserId,
+                        name: 'ユーザー_' + currentUserId.substr(-4),
+                        avatar: AVATAR_PRESETS[Math.floor(Math.random() * AVATAR_PRESETS.length)],
+                        status: 'リラックス中',
+                        statusTime: '~ 18:00',
+                        nameLastChanged: 0
+                    };
+                    localStorage.setItem('loom_user_profile_v2', JSON.stringify(currentUser));
+                }
+
+                try {
+                    await signInAnonymously(auth);
+                } catch(e) {
+                    console.log("Firebase Auth fallback to local mode:", e);
+                }
+
+                updateMyProfileUI();
+                await joinRoom(currentRoomKey);
+            } catch(err) {
+                console.error("Initialization error:", err);
+            }
+        }
 
         window.onload = function() {
             initAuth();
