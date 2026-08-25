@@ -1,1 +1,1185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>loom - つながりを、もっと心地よく。</title>
 
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        loom: {
+                            bg: '#F9F8F6',
+                            card: '#FFFFFF',
+                            cardAlt: '#F3F0EC',
+                            primary: '#5B6E58',
+                            primaryHover: '#4A5B47',
+                            accent: '#D99B82',
+                            text: '#2D312E',
+                            textMuted: '#7A807B',
+                            border: '#E8E5E0'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome & Lucide Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #F9F8F6;
+            color: #2D312E;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-loom-bg text-loom-text antialiased min-h-screen">
+    <div id="app" class="flex min-h-screen">
+        
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="w-64 border-r border-loom-border bg-loom-bg flex flex-col justify-between p-6 fixed h-full z-20 hidden md:flex">
+            <div>
+                <!-- Brand Logo -->
+                <div class="flex items-center space-x-3 mb-10 px-2 cursor-pointer" onclick="switchTab('home')">
+                    <div class="w-8 h-8 rounded-full bg-loom-primary flex items-center justify-center text-white font-semibold">
+                        <i class="fa-solid fa-[#4A5B47] fa-clover"></i>
+                        <span class="text-lg font-bold tracking-wider">loom</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="space-y-1">
+                    <button id="nav-home" onclick="switchTab('home')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl bg-loom-cardAlt font-medium text-loom-text transition-all">
+                        <i class="fa-solid fa-house w-5 text-center"></i>
+                        <span>Home</span>
+                    </button>
+                    <button id="nav-friends" onclick="switchTab('friends')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all">
+                        <i class="fa-solid fa-user-group w-5 text-center"></i>
+                        <span>Friends</span>
+                        <span id="friendReqBadge" class="hidden ml-auto bg-loom-accent text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                    </button>
+                    <button id="nav-messages" onclick="switchTab('messages')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all">
+                        <i class="fa-regular fa-comment-dots w-5 text-center"></i>
+                        <span>Messages</span>
+                    </button>
+                    <button id="nav-moments" onclick="switchTab('moments')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all">
+                        <i class="fa-regular fa-heart w-5 text-center"></i>
+                        <span>Moments</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Profile & Admin Switch -->
+            <div class="space-y-2 pt-4 border-t border-loom-border">
+                <div onclick="openProfileModal()" class="flex items-center justify-between p-2 rounded-2xl hover:bg-loom-cardAlt cursor-pointer transition-all">
+                    <div class="flex items-center space-x-3">
+                        <img id="myAvatarImg" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-10 h-10 rounded-full object-cover border border-white shadow-sm" alt="User Avatar">
+                        <div class="truncate max-w-[100px]">
+                            <p id="myNameText" class="text-sm font-semibold truncate">ユーザー</p>
+                            <p id="myStatusText" class="text-xs text-loom-textMuted truncate">集中モード</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs text-loom-textMuted"></i>
+                </div>
+
+                <div class="flex justify-between px-2 pt-2 text-loom-textMuted">
+                    <button onclick="openAdminModal()" class="hover:text-loom-primary text-xs flex items-center space-x-1">
+                        <i class="fa-solid fa-user-shield"></i>
+                        <span id="adminStatusLabel">管理者モード</span>
+                    </button>
+                    <button onclick="openProfileModal()" class="hover:text-loom-primary text-xs">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 md:ml-64 p-4 md:p-8 max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 w-full">
+            
+            <!-- CENTRAL FEED AREA -->
+            <div class="flex-1 space-y-6">
+                <!-- TOP HEADER BAR -->
+                <header class="flex flex-wrap items-center justify-between gap-4 pb-2">
+                    <div>
+                        <h1 class="text-2xl font-bold">Home</h1>
+                        <p class="text-xs text-loom-textMuted">つながりを、もっと心地よく。</p>
+                    </div>
+
+                    <!-- Room Key Controls -->
+                    <div class="flex items-center gap-2 bg-loom-card px-3 py-1.5 rounded-2xl border border-loom-border shadow-sm text-sm">
+                        <div class="flex items-center space-x-1.5">
+                            <span id="roomStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <span id="roomStatusLabel" class="text-xs font-semibold text-loom-text">loom-lounge</span>
+                        </div>
+                        <input type="text" id="inputRoomKey" placeholder="Room Key..." class="w-28 bg-loom-bg px-2 py-1 rounded-xl text-xs outline-none border border-transparent focus:border-loom-primary">
+                        <button onclick="joinCustomRoom()" class="bg-loom-primary text-white text-xs px-2.5 py-1 rounded-xl hover:bg-loom-primaryHover transition-all font-medium">参加</button>
+                        <button id="btnLeaveRoom" onclick="leaveRoom()" class="bg-gray-200 text-loom-text text-xs px-2.5 py-1 rounded-xl hover:bg-gray-300 transition-all font-medium">退出</button>
+                    </div>
+                </header>
+
+                <!-- TAB: HOME VIEW -->
+                <div id="tab-home" class="space-y-6">
+                    <!-- FRIENDS STATUS CAROUSEL -->
+                    <section class="space-y-3">
+                        <div class="flex justify-between items-center px-1">
+                            <div class="flex items-center space-x-2">
+                                <h2 class="font-bold text-base">Friends Status</h2>
+                                <span id="onlineCountBadge" class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">0 online</span>
+                            </div>
+                            <button onclick="switchTab('friends')" class="text-xs text-loom-textMuted hover:text-loom-primary">すべて見る</button>
+                        </div>
+
+                        <div id="friendsStatusCarousel" class="flex gap-4 overflow-x-auto hide-scrollbar pb-2">
+                            <!-- Cards inserted dynamically -->
+                        </div>
+                    </section>
+
+                    <!-- MOMENTS POST CREATOR -->
+                    <section class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-4">
+                        <h3 class="font-medium text-sm text-loom-textMuted">Moments</h3>
+                        <textarea id="momentInputText" rows="2" placeholder="今、どんな気分？" class="w-full bg-loom-bg rounded-2xl p-3 text-sm outline-none resize-none border border-transparent focus:border-loom-primary transition-all"></textarea>
+                        
+                        <!-- Selected Photo Preview -->
+                        <div id="selectedPhotoPreview" class="hidden relative inline-block">
+                            <img id="previewPhotoImg" src="" class="h-20 w-20 object-cover rounded-2xl border">
+                            <button onclick="clearSelectedPhoto()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-loom-border/50 text-xs text-loom-textMuted">
+                            <div class="flex space-x-3">
+                                <button onclick="selectPresetPhotoModal()" class="hover:text-loom-primary flex items-center space-x-1 px-2 py-1 rounded-lg hover:bg-loom-cardAlt">
+                                    <i class="fa-regular fa-image text-emerald-600"></i>
+                                    <span>写真</span>
+                                </button>
+                                <button onclick="showToast('気分タグ機能を適用しました')" class="hover:text-loom-primary flex items-center space-x-1 px-2 py-1 rounded-lg hover:bg-loom-cardAlt">
+                                    <i class="fa-regular fa-face-smile text-amber-500"></i>
+                                    <span>気分</span>
+                                </button>
+                            </div>
+                            <button onclick="publishMoment()" class="bg-loom-primary hover:bg-loom-primaryHover text-white px-5 py-2 rounded-2xl font-semibold shadow-sm transition-all">
+                                シェア
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- TIMELINE FEED -->
+                    <section id="timelineFeed" class="space-y-4">
+                        <!-- Posts rendered dynamically -->
+                    </section>
+                </div>
+
+                <!-- TAB: FRIENDS VIEW -->
+                <div id="tab-friends" class="hidden space-y-6">
+                    <h2 class="text-xl font-bold">Friends</h2>
+                    
+                    <!-- Friend Requests Section -->
+                    <div class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm">フレンド申請一覧</h3>
+                        <div id="friendRequestsList" class="space-y-2">
+                            <p class="text-xs text-loom-textMuted">届いているフレンド申請はありません</p>
+                        </div>
+                    </div>
+
+                    <!-- Active Room Members & Friends list -->
+                    <div class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-4">
+                        <h3 class="font-bold text-sm">同じルームのメンバー</h3>
+                        <div id="roomMembersList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <!-- Members inserted dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: MESSAGES VIEW -->
+                <div id="tab-messages" class="hidden space-y-4">
+                    <h2 class="text-xl font-bold">Messages</h2>
+                    <div id="messagesTabContent" class="bg-loom-card rounded-3xl border border-loom-border p-6 text-center text-loom-textMuted">
+                        右側の「Messages」リストから会話したい相手を選択してください。
+                    </div>
+                </div>
+
+                <!-- TAB: MOMENTS VIEW -->
+                <div id="tab-moments" class="hidden space-y-4">
+                    <h2 class="text-xl font-bold">Moments Timeline</h2>
+                    <div id="momentsOnlyFeed" class="space-y-4">
+                        <!-- Duplicated view for dedicated Moments tab -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT SIDEBAR (MESSAGES & SUGGESTIONS) -->
+            <aside class="w-full lg:w-80 space-y-6">
+                <!-- MESSAGES PANEL -->
+                <section class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="font-bold text-base">Messages</h2>
+                    </div>
+
+                    <div id="directMessagesList" class="space-y-2">
+                        <!-- Chat targets list inserted dynamically -->
+                    </div>
+                </section>
+
+                <!-- CONNECTION TIPS -->
+                <section class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-3">
+                    <h3 class="font-semibold text-xs text-loom-textMuted uppercase tracking-wider">つながりのヒント</h3>
+                    <div class="bg-loom-cardAlt p-4 rounded-2xl space-y-3 text-xs">
+                        <p class="font-medium">ルームキーを共有して仲間と会話しましょう</p>
+                        <p class="text-loom-textMuted">同じRoom Key（例: `secret-lounge`）を入力することで、専用のリアルタイムルームに参加できます。</p>
+                    </div>
+                </section>
+            </aside>
+        </main>
+    </div>
+
+    <!-- PROFILE & NAME EDIT MODAL -->
+    <div id="profileModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-loom-card max-w-md w-full rounded-3xl p-6 shadow-xl space-y-4 border border-loom-border">
+            <div class="flex justify-between items-center border-b border-loom-border pb-3">
+                <h3 class="font-bold text-lg">プロフィール設定</h3>
+                <button onclick="closeProfileModal()" class="text-loom-textMuted hover:text-loom-text"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="space-y-4 text-sm">
+                <!-- Avatar selection -->
+                <div>
+                    <label class="block font-semibold mb-2 text-xs text-loom-textMuted">アバター選択</label>
+                    <div id="avatarPresetsContainer" class="flex gap-2 overflow-x-auto pb-2">
+                        <!-- Presets dynamically added -->
+                    </div>
+                </div>
+
+                <!-- Name input with 24h cooldown restriction -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block font-semibold text-xs text-loom-textMuted">表示名 (名前)</label>
+                        <span id="nameCooldownTimer" class="text-xs text-amber-600 font-medium"></span>
+                    </div>
+                    <input type="text" id="inputProfileName" class="w-full bg-loom-bg px-3 py-2 rounded-xl border border-loom-border outline-none focus:border-loom-primary">
+                    <p class="text-[10px] text-loom-textMuted mt-1">※セキュリティ保護のため、名前変更後は24時間経過するまで再変更できません。</p>
+                </div>
+
+                <!-- Status input -->
+                <div>
+                    <label class="block font-semibold mb-1 text-xs text-loom-textMuted">現在のステータス</label>
+                    <select id="inputProfileStatus" class="w-full bg-loom-bg px-3 py-2 rounded-xl border border-loom-border outline-none">
+                        <option value="集中モード">集中モード</option>
+                        <option value="散歩中">散歩中</option>
+                        <option value="リラックス中">リラックス中</option>
+                        <option value="仕事中">仕事中</option>
+                        <option value="カフェにいるよ">カフェにいるよ</option>
+                        <option value="移動中">移動中</option>
+                    </select>
+                </div>
+
+                <!-- Status End Time -->
+                <div>
+                    <label class="block font-semibold mb-1 text-xs text-loom-textMuted">終了予定時間</label>
+                    <input type="text" id="inputProfileTime" placeholder="~ 18:00" class="w-full bg-loom-bg px-3 py-2 rounded-xl border border-loom-border outline-none">
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2">
+                <button onclick="closeProfileModal()" class="px-4 py-2 rounded-xl text-xs text-loom-textMuted hover:bg-loom-cardAlt">キャンセル</button>
+                <button onclick="saveProfileSettings()" class="bg-loom-primary text-white px-5 py-2 rounded-xl text-xs font-semibold hover:bg-loom-primaryHover">保存する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIRECT CHAT MODAL -->
+    <div id="chatModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-loom-card max-w-lg w-full rounded-3xl h-[550px] flex flex-col shadow-xl border border-loom-border">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-4 border-b border-loom-border">
+                <div class="flex items-center space-x-3">
+                    <img id="chatTargetAvatar" src="" class="w-9 h-9 rounded-full object-cover">
+                    <div>
+                        <h4 id="chatTargetName" class="font-bold text-sm">ユーザー名</h4>
+                        <span id="chatTargetStatus" class="text-xs text-loom-textMuted">オフライン</span>
+                    </div>
+                </div>
+                <button onclick="closeChatModal()" class="text-loom-textMuted hover:text-loom-text"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <!-- Messages area -->
+            <div id="chatMessagesContainer" class="flex-1 p-4 overflow-y-auto space-y-3 bg-loom-bg/50">
+                <!-- Direct messages rendered dynamically -->
+            </div>
+
+            <!-- Input area -->
+            <div class="p-3 border-t border-loom-border flex items-center space-x-2 bg-loom-card rounded-b-3xl">
+                <input type="text" id="chatInputText" placeholder="メッセージを入力..." class="flex-1 bg-loom-bg px-4 py-2.5 rounded-2xl text-sm outline-none border border-transparent focus:border-loom-primary" onkeypress="if(event.key==='Enter') sendDirectMessage()">
+                <button onclick="sendDirectMessage()" class="bg-loom-primary text-white w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-loom-primaryHover transition-all">
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHOTO PRESET SELECTION MODAL -->
+    <div id="photoSelectModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-loom-card max-w-md w-full rounded-3xl p-6 shadow-xl space-y-4 border border-loom-border">
+            <div class="flex justify-between items-center border-b border-loom-border pb-3">
+                <h3 class="font-bold text-base">画像を選択</h3>
+                <button onclick="closePhotoModal()" class="text-loom-textMuted"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80" onclick="attachPhoto('https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
+                <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" onclick="attachPhoto('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
+                <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80" onclick="attachPhoto('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
+                <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80" onclick="attachPhoto('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80')" class="h-28 w-full object-cover rounded-2xl cursor-pointer hover:opacity-80">
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN LOGIN & CONTROL MODAL -->
+    <div id="adminModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-loom-card max-w-md w-full rounded-3xl p-6 shadow-xl space-y-4 border border-loom-border">
+            <div class="flex justify-between items-center border-b border-loom-border pb-3">
+                <h3 class="font-bold text-lg text-red-600"><i class="fa-solid fa-shield-halved mr-1"></i> 管理者モード</h3>
+                <button onclick="closeAdminModal()" class="text-loom-textMuted"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div id="adminLoginSection" class="space-y-3">
+                <p class="text-xs text-loom-textMuted">管理者パスワードを入力してください (初期設定: admin123)</p>
+                <input type="password" id="adminPasswordInput" placeholder="パスワード" class="w-full bg-loom-bg px-3 py-2 rounded-xl border border-loom-border outline-none">
+                <button onclick="verifyAdminPassword()" class="w-full bg-red-600 text-white py-2 rounded-xl text-xs font-bold hover:bg-red-700">認証</button>
+            </div>
+
+            <div id="adminControlSection" class="hidden space-y-4">
+                <div class="bg-red-50 p-3 rounded-2xl border border-red-200 text-xs text-red-800 font-medium">
+                    管理者権限でログインしています
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold mb-1">システムアナウンス送信</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="adminAnnounceInput" placeholder="全ユーザーへメッセージ..." class="flex-1 bg-loom-bg px-3 py-2 rounded-xl text-xs border border-loom-border outline-none">
+                        <button onclick="sendAdminAnnouncement()" class="bg-loom-primary text-white px-3 py-2 rounded-xl text-xs font-bold">配信</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold mb-2">投稿の強制削除・管理</h4>
+                    <div id="adminMomentsList" class="max-h-40 overflow-y-auto space-y-2 text-xs">
+                        <!-- Admin post controls -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION SYSTEM -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- 
+      External config support for GitHub & Firebase 
+    -->
+    <script src="firebase-config.js" onerror="console.log('firebase-config.js not found. Using default fallback configuration.')"></script>
+
+    <!-- FIREBASE CLIENT SDK SCRIPT MODULE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Initialize Firebase App with External Window Object, Global Env, or Safe Fallback
+        const defaultFirebaseConfig = {
+            apiKey: "AIzaSyAtKhahc86s5zg8XfcgqUDiG5BSHLDGh64",
+            authDomain: "minecraft-2d284.firebaseapp.com",
+            projectId: "minecraft-2d284",
+            storageBucket: "minecraft-2d284.firebasestorage.app",
+            messagingSenderId: "92607262911",
+            appId: "1:92607262911:web:d2300a09bfabb9a24c960a"
+        };
+
+        const firebaseConfig = window.FIREBASE_CONFIG 
+            ? window.FIREBASE_CONFIG 
+            : (typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig);
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'loom-default-app';
+
+        let currentUserId = null;
+        let currentRoomKey = "loom-lounge";
+        let isInRoom = true;
+        let activeChatUserId = null;
+        let isAdminMode = false;
+        let selectedPresetPhoto = null;
+
+        // User Profile Data
+        let currentUser = {
+            id: '',
+            name: '',
+            status: '集中モード',
+            time: '~ 18:00',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+            lastNameChange: 0
+        };
+
+        // Local cache key definitions
+        const LOCAL_STORAGE_PROFILE_KEY = 'loom_user_profile_v2';
+        const LOCAL_STORAGE_MOMENTS_KEY = 'loom_local_moments_cache';
+
+        const presetAvatars = [
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+            'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+            'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=200&q=80',
+            'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80',
+            'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80'
+        ];
+
+        // Active listeners for clean unsubscribing
+        let unsubPresence = null;
+        let unsubMoments = null;
+        let unsubMessages = null;
+        let unsubFriends = null;
+
+        // In-memory data synced from Firestore & LocalStorage
+        let roomUsers = [];
+        let roomMoments = [];
+        let roomMessages = [];
+        let friendRequests = [];
+
+        // Firestore Public Collection Helpers
+        const getPublicCollection = (colName) => collection(db, 'artifacts', appId, 'public', 'data', colName);
+        const getPublicDoc = (colName, docId) => doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
+
+        function loadLocalDataCache() {
+            try {
+                const savedProfile = localStorage.getItem(LOCAL_STORAGE_PROFILE_KEY);
+                if (savedProfile) {
+                    currentUser = { ...currentUser, ...JSON.parse(savedProfile) };
+                }
+                const savedMoments = localStorage.getItem(LOCAL_STORAGE_MOMENTS_KEY);
+                if (savedMoments) {
+                    roomMoments = JSON.parse(savedMoments);
+                }
+            } catch (err) {
+                console.warn("Failed to load local storage cache:", err);
+            }
+        }
+
+        function saveLocalProfileCache() {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(currentUser));
+            } catch (err) {
+                console.warn("Failed to save profile cache:", err);
+            }
+        }
+
+        function saveLocalMomentsCache(momentsList) {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_MOMENTS_KEY, JSON.stringify(momentsList.slice(0, 30)));
+            } catch (err) {
+                console.warn("Failed to save moments cache:", err);
+            }
+        }
+
+        async function initAuth() {
+            loadLocalDataCache();
+
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                currentUserId = auth.currentUser ? auth.currentUser.uid : 'user_' + Math.random().toString(36).substring(2, 9);
+            } catch (err) {
+                console.error("Auth init error:", err);
+                currentUserId = 'user_' + Math.random().toString(36).substring(2, 9);
+            }
+            currentUser.id = currentUserId;
+
+            if (!currentUser.name) {
+                currentUser.name = 'User_' + currentUserId.substring(0, 4);
+            }
+
+            saveLocalProfileCache();
+            updateProfileUI();
+            renderAvatarPresets();
+            joinRoom(currentRoomKey);
+        }
+
+        window.joinCustomRoom = function() {
+            const val = document.getElementById('inputRoomKey').value.trim();
+            if (!val) {
+                showToast('Room Keyを入力してください');
+                return;
+            }
+            joinRoom(val);
+        };
+
+        window.leaveRoom = function() {
+            if (!isInRoom) return;
+            isInRoom = false;
+            updateRoomHeaderUI();
+
+            if (unsubPresence) unsubPresence();
+            if (unsubMessages) unsubMessages();
+
+            roomUsers = [];
+            renderFriendsCarousel();
+            renderMembersList();
+            renderDirectMessagesList();
+
+            showToast('ルームから退出しました (個人モード)');
+        };
+
+        async function joinRoom(roomKey) {
+            currentRoomKey = roomKey;
+            isInRoom = true;
+            document.getElementById('inputRoomKey').value = roomKey;
+            updateRoomHeaderUI();
+
+            await updateUserPresence();
+
+            setupPresenceListener();
+            setupMomentsListener();
+            setupMessagesListener();
+            setupFriendsListener();
+
+            showToast(`ルーム "${roomKey}" に参加しました`);
+        }
+
+        function updateRoomHeaderUI() {
+            const dot = document.getElementById('roomStatusDot');
+            const label = document.getElementById('roomStatusLabel');
+            const btnLeave = document.getElementById('btnLeaveRoom');
+
+            if (isInRoom) {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+                label.innerText = currentRoomKey;
+                btnLeave.className = "bg-gray-200 text-loom-text text-xs px-2.5 py-1 rounded-xl hover:bg-gray-300 transition-all font-medium";
+            } else {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-gray-400";
+                label.innerText = "個人モード（未参加）";
+                btnLeave.className = "bg-gray-100 text-gray-400 text-xs px-2.5 py-1 rounded-xl cursor-not-allowed";
+            }
+        }
+
+        async function updateUserPresence() {
+            if (!currentUserId) return;
+            try {
+                await setDoc(getPublicDoc('loom_presence', currentUserId), {
+                    userId: currentUserId,
+                    name: currentUser.name,
+                    status: currentUser.status,
+                    time: currentUser.time,
+                    avatar: currentUser.avatar,
+                    roomKey: isInRoom ? currentRoomKey : 'none',
+                    lastSeen: Date.now()
+                }, { merge: true });
+            } catch (err) {
+                console.error("Failed to update presence:", err);
+            }
+        }
+
+        function setupPresenceListener() {
+            if (unsubPresence) unsubPresence();
+
+            unsubPresence = onSnapshot(getPublicCollection('loom_presence'), (snapshot) => {
+                roomUsers = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if (isInRoom && data.roomKey === currentRoomKey && data.userId !== currentUserId) {
+                        roomUsers.push(data);
+                    }
+                });
+                renderFriendsCarousel();
+                renderMembersList();
+                renderDirectMessagesList();
+            }, (error) => console.error("Presence error:", error));
+        }
+
+        function setupMomentsListener() {
+            if (unsubMoments) unsubMoments();
+
+            unsubMoments = onSnapshot(getPublicCollection('loom_moments'), (snapshot) => {
+                roomMoments = [];
+                const myFriendIds = getAcceptedFriendIds();
+
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const isMyOwnPost = data.userId === currentUserId;
+                    const isFriendPost = myFriendIds.includes(data.userId);
+                    const isSameRoomPost = isInRoom && data.roomKey === currentRoomKey;
+
+                    if (isSameRoomPost || isFriendPost || isMyOwnPost) {
+                        roomMoments.push({ id: docSnap.id, ...data });
+                    }
+                });
+
+                roomMoments.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                saveLocalMomentsCache(roomMoments);
+
+                renderFeed();
+                if (isAdminMode) renderAdminMomentsList();
+            }, (error) => console.error("Moments error:", error));
+        }
+
+        function setupMessagesListener() {
+            if (unsubMessages) unsubMessages();
+
+            unsubMessages = onSnapshot(getPublicCollection('loom_messages'), (snapshot) => {
+                roomMessages = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if (data.senderId === currentUserId || data.receiverId === currentUserId) {
+                        roomMessages.push({ id: docSnap.id, ...data });
+                    }
+                });
+                roomMessages.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                if (activeChatUserId) {
+                    renderChatMessages();
+                }
+                renderDirectMessagesList();
+            }, (error) => console.error("Messages error:", error));
+        }
+
+        function setupFriendsListener() {
+            if (unsubFriends) unsubFriends();
+
+            unsubFriends = onSnapshot(getPublicCollection('loom_friends'), (snapshot) => {
+                friendRequests = [];
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if (data.toUserId === currentUserId || data.fromUserId === currentUserId) {
+                        friendRequests.push({ id: docSnap.id, ...data });
+                    }
+                });
+                renderFriendRequests();
+                renderMembersList();
+            }, (error) => console.error("Friends error:", error));
+        }
+
+        function getAcceptedFriendIds() {
+            const ids = [];
+            friendRequests.forEach(req => {
+                if (req.status === 'accepted') {
+                    if (req.fromUserId === currentUserId) ids.push(req.toUserId);
+                    if (req.toUserId === currentUserId) ids.push(req.fromUserId);
+                }
+            });
+            return ids;
+        }
+
+        function renderFriendsCarousel() {
+            const container = document.getElementById('friendsStatusCarousel');
+            const badge = document.getElementById('onlineCountBadge');
+
+            badge.innerText = `${roomUsers.length} online`;
+
+            if (roomUsers.length === 0) {
+                container.innerHTML = `
+                    <div class="p-6 bg-loom-card rounded-2xl text-xs text-loom-textMuted w-full text-center border border-loom-border">
+                        ${isInRoom ? '現在このルームに他のメンバーはいません。Room Keyを友達に共有してみよう！' : '個人モード中です。ルームに参加するとメンバーが表示されます。'}
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = roomUsers.map(user => `
+                <div class="min-w-[150px] bg-loom-card p-4 rounded-3xl border border-loom-border shadow-sm flex flex-col items-center text-center space-y-2">
+                    <div class="relative">
+                        <img src="${user.avatar || presetAvatars[0]}" class="w-16 h-16 rounded-full object-cover border-2 border-loom-cardAlt">
+                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white"></span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-xs truncate max-w-[120px]">${escapeHtml(user.name)}</h4>
+                        <p class="text-[11px] text-loom-textMuted mt-0.5 truncate">${escapeHtml(user.status || 'オンライン')}</p>
+                        <p class="text-[10px] text-loom-textMuted/70">${escapeHtml(user.time || '')}</p>
+                    </div>
+                    <button onclick="openChatModal('${user.userId}', '${escapeJs(user.name)}', '${escapeJs(user.avatar)}')" class="bg-loom-cardAlt hover:bg-loom-primary hover:text-white text-loom-text text-xs py-1 px-3 rounded-xl transition-all font-medium w-full">
+                        メッセージ
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderFeed() {
+            const container = document.getElementById('timelineFeed');
+            const momentsOnly = document.getElementById('momentsOnlyFeed');
+
+            if (roomMoments.length === 0) {
+                const emptyHTML = `
+                    <div class="bg-loom-card p-8 rounded-3xl border border-loom-border text-center text-loom-textMuted text-xs">
+                        まだ投稿はありません。「今、どんな気分？」から最初のMomentsを投稿してみましょう！
+                    </div>
+                `;
+                container.innerHTML = emptyHTML;
+                if (momentsOnly) momentsOnly.innerHTML = emptyHTML;
+                return;
+            }
+
+            const html = roomMoments.map(post => `
+                <article class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <img src="${post.userAvatar || presetAvatars[0]}" class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <h4 class="font-bold text-sm">${escapeHtml(post.userName)}</h4>
+                                <p class="text-[10px] text-loom-textMuted">${formatTimestamp(post.createdAt)}</p>
+                            </div>
+                        </div>
+                        ${post.userId === currentUserId || isAdminMode ? `
+                            <button onclick="deletePost('${post.id}')" class="text-loom-textMuted hover:text-red-500 text-xs">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <p class="text-sm whitespace-pre-line leading-relaxed">${escapeHtml(post.content)}</p>
+
+                    ${post.photoUrl ? `
+                        <img src="${post.photoUrl}" class="w-full max-h-80 object-cover rounded-2xl border border-loom-border">
+                    ` : ''}
+                </article>
+            `).join('');
+
+            container.innerHTML = html;
+            if (momentsOnly) momentsOnly.innerHTML = html;
+        }
+
+        window.publishMoment = async function() {
+            const input = document.getElementById('momentInputText');
+            const text = input.value.trim();
+
+            if (!text && !selectedPresetPhoto) {
+                showToast('投稿内容を入力してください');
+                return;
+            }
+
+            try {
+                const docRef = doc(getPublicCollection('loom_moments'));
+                const newPost = {
+                    userId: currentUserId,
+                    userName: currentUser.name,
+                    userAvatar: currentUser.avatar,
+                    content: text,
+                    photoUrl: selectedPresetPhoto || null,
+                    roomKey: currentRoomKey,
+                    createdAt: Date.now()
+                };
+
+                await setDoc(docRef, newPost);
+
+                input.value = '';
+                clearSelectedPhoto();
+                showToast('Momentsを投稿しました');
+            } catch (err) {
+                console.error("Publish error:", err);
+                showToast('投稿の送信に失敗しました');
+            }
+        };
+
+        window.deletePost = async function(postId) {
+            try {
+                await deleteDoc(getPublicDoc('loom_moments', postId));
+                showToast('投稿を削除しました');
+            } catch (err) {
+                console.error("Delete error:", err);
+            }
+        };
+
+        window.openChatModal = function(targetUserId, targetName, targetAvatar) {
+            activeChatUserId = targetUserId;
+            document.getElementById('chatTargetName').innerText = targetName;
+            document.getElementById('chatTargetAvatar').src = targetAvatar || presetAvatars[0];
+            document.getElementById('chatModal').classList.remove('hidden');
+            renderChatMessages();
+        };
+
+        window.closeChatModal = function() {
+            activeChatUserId = null;
+            document.getElementById('chatModal').classList.add('hidden');
+        };
+
+        window.sendDirectMessage = async function() {
+            const input = document.getElementById('chatInputText');
+            const text = input.value.trim();
+            if (!text || !activeChatUserId) return;
+
+            try {
+                const msgRef = doc(getPublicCollection('loom_messages'));
+                await setDoc(msgRef, {
+                    senderId: currentUserId,
+                    receiverId: activeChatUserId,
+                    content: text,
+                    createdAt: Date.now()
+                });
+                input.value = '';
+            } catch (err) {
+                console.error("Send message error:", err);
+            }
+        };
+
+        function renderChatMessages() {
+            const container = document.getElementById('chatMessagesContainer');
+            if (!activeChatUserId) return;
+
+            const filtered = roomMessages.filter(m => 
+                (m.senderId === currentUserId && m.receiverId === activeChatUserId) ||
+                (m.senderId === activeChatUserId && m.receiverId === currentUserId)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="text-center text-xs text-loom-textMuted py-4">メッセージ履歴はまだありません</p>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(m => {
+                const isMe = m.senderId === currentUserId;
+                return `
+                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-[75%] ${isMe ? 'bg-loom-primary text-white rounded-2xl rounded-tr-none' : 'bg-loom-card text-loom-text rounded-2xl rounded-tl-none border border-loom-border'} p-3 text-xs shadow-sm">
+                            <p>${escapeHtml(m.content)}</p>
+                            <span class="text-[9px] ${isMe ? 'text-white/70' : 'text-loom-textMuted'} block text-right mt-1">${formatTimestamp(m.createdAt)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderDirectMessagesList() {
+            const container = document.getElementById('directMessagesList');
+            const targetUsers = [...roomUsers];
+
+            if (targetUsers.length === 0) {
+                container.innerHTML = `<p class="text-xs text-loom-textMuted text-center py-2">アクティブな会話はありません</p>`;
+                return;
+            }
+
+            container.innerHTML = targetUsers.map(user => `
+                <div onclick="openChatModal('${user.userId}', '${escapeJs(user.name)}', '${escapeJs(user.avatar)}')" class="flex items-center space-x-3 p-2.5 rounded-2xl hover:bg-loom-cardAlt cursor-pointer transition-all">
+                    <img src="${user.avatar || presetAvatars[0]}" class="w-10 h-10 rounded-full object-cover">
+                    <div class="flex-1 truncate">
+                        <h4 class="font-bold text-xs truncate">${escapeHtml(user.name)}</h4>
+                        <p class="text-[11px] text-loom-textMuted truncate">${escapeHtml(user.status || 'オンライン')}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderMembersList() {
+            const container = document.getElementById('roomMembersList');
+            if (!container) return;
+
+            if (roomUsers.length === 0) {
+                container.innerHTML = `<p class="text-xs text-loom-textMuted col-span-2">現在ルーム内に他のメンバーはいません</p>`;
+                return;
+            }
+
+            const myFriendIds = getAcceptedFriendIds();
+
+            container.innerHTML = roomUsers.map(user => {
+                const isFriend = myFriendIds.includes(user.userId);
+                return `
+                    <div class="flex items-center justify-between p-3 bg-loom-bg rounded-2xl border border-loom-border">
+                        <div class="flex items-center space-x-2 truncate">
+                            <img src="${user.avatar || presetAvatars[0]}" class="w-8 h-8 rounded-full object-cover">
+                            <span class="font-bold text-xs truncate">${escapeHtml(user.name)}</span>
+                        </div>
+                        ${isFriend ? `
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-1 rounded-xl">フレンド</span>
+                        ` : `
+                            <button onclick="sendFriendRequest('${user.userId}')" class="bg-loom-primary text-white text-[10px] px-2.5 py-1 rounded-xl hover:bg-loom-primaryHover">
+                                申請する
+                            </button>
+                        `}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.sendFriendRequest = async function(toUserId) {
+            try {
+                const docRef = doc(getPublicCollection('loom_friends'));
+                await setDoc(docRef, {
+                    fromUserId: currentUserId,
+                    toUserId: toUserId,
+                    status: 'pending',
+                    createdAt: Date.now()
+                });
+                showToast('フレンド申請を送信しました');
+            } catch (err) {
+                console.error("Friend req error:", err);
+            }
+        };
+
+        function renderFriendRequests() {
+            const container = document.getElementById('friendRequestsList');
+            const pending = friendRequests.filter(r => r.toUserId === currentUserId && r.status === 'pending');
+
+            const badge = document.getElementById('friendReqBadge');
+            if (pending.length > 0) {
+                badge.innerText = pending.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            if (pending.length === 0) {
+                container.innerHTML = `<p class="text-xs text-loom-textMuted">届いているフレンド申請はありません</p>`;
+                return;
+            }
+
+            container.innerHTML = pending.map(req => `
+                <div class="flex items-center justify-between p-3 bg-loom-cardAlt rounded-2xl text-xs">
+                    <span>新しいフレンド申請が届いています</span>
+                    <div class="space-x-1">
+                        <button onclick="respondFriendRequest('${req.id}', 'accepted')" class="bg-loom-primary text-white px-2.5 py-1 rounded-xl font-bold">承認</button>
+                        <button onclick="respondFriendRequest('${req.id}', 'rejected')" class="bg-gray-300 text-loom-text px-2.5 py-1 rounded-xl">拒否</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.respondFriendRequest = async function(reqId, newStatus) {
+            try {
+                await updateDoc(getPublicDoc('loom_friends', reqId), { status: newStatus });
+                showToast(newStatus === 'accepted' ? 'フレンド申請を承認しました' : '申請を拒否しました');
+            } catch (err) {
+                console.error("Respond req error:", err);
+            }
+        };
+
+        window.openProfileModal = function() {
+            document.getElementById('inputProfileName').value = currentUser.name;
+            document.getElementById('inputProfileStatus').value = currentUser.status;
+            document.getElementById('inputProfileTime').value = currentUser.time;
+
+            const now = Date.now();
+            const cooldownMs = 24 * 60 * 60 * 1000;
+            const timeDiff = now - (currentUser.lastNameChange || 0);
+
+            const nameInput = document.getElementById('inputProfileName');
+            const cooldownTimer = document.getElementById('nameCooldownTimer');
+
+            if (currentUser.lastNameChange && timeDiff < cooldownMs) {
+                nameInput.disabled = true;
+                const hoursLeft = Math.ceil((cooldownMs - timeDiff) / (1000 * 60 * 60));
+                cooldownTimer.innerText = `変更不可 (残り約 ${hoursLeft} 時間)`;
+            } else {
+                nameInput.disabled = false;
+                cooldownTimer.innerText = "変更可能";
+            }
+
+            document.getElementById('profileModal').classList.remove('hidden');
+        };
+
+        window.closeProfileModal = function() {
+            document.getElementById('profileModal').classList.add('hidden');
+        };
+
+        window.saveProfileSettings = async function() {
+            const newName = document.getElementById('inputProfileName').value.trim();
+            const newStatus = document.getElementById('inputProfileStatus').value;
+            const newTime = document.getElementById('inputProfileTime').value.trim();
+
+            if (newName && newName !== currentUser.name && !document.getElementById('inputProfileName').disabled) {
+                currentUser.name = newName;
+                currentUser.lastNameChange = Date.now();
+            }
+
+            currentUser.status = newStatus || currentUser.status;
+            currentUser.time = newTime || currentUser.time;
+
+            saveLocalProfileCache();
+            updateProfileUI();
+            await updateUserPresence();
+
+            closeProfileModal();
+            showToast('プロフィールを更新・保存しました');
+        };
+
+        function updateProfileUI() {
+            document.getElementById('myNameText').innerText = currentUser.name;
+            document.getElementById('myStatusText').innerText = currentUser.status;
+            document.getElementById('myAvatarImg').src = currentUser.avatar;
+        }
+
+        function renderAvatarPresets() {
+            const container = document.getElementById('avatarPresetsContainer');
+            container.innerHTML = presetAvatars.map(url => `
+                <img src="${url}" onclick="selectAvatarPreset('${url}')" class="w-12 h-12 rounded-full object-cover cursor-pointer border-2 hover:border-loom-primary transition-all flex-shrink-0 ${currentUser.avatar === url ? 'border-loom-primary' : 'border-transparent'}">
+            `).join('');
+        }
+
+        window.selectAvatarPreset = function(url) {
+            currentUser.avatar = url;
+            renderAvatarPresets();
+        };
+
+        window.selectPresetPhotoModal = function() {
+            document.getElementById('photoSelectModal').classList.remove('hidden');
+        };
+
+        window.closePhotoModal = function() {
+            document.getElementById('photoSelectModal').classList.add('hidden');
+        };
+
+        window.attachPhoto = function(url) {
+            selectedPresetPhoto = url;
+            document.getElementById('previewPhotoImg').src = url;
+            document.getElementById('selectedPhotoPreview').classList.remove('hidden');
+            closePhotoModal();
+        };
+
+        window.clearSelectedPhoto = function() {
+            selectedPresetPhoto = null;
+            document.getElementById('selectedPhotoPreview').classList.add('hidden');
+        };
+
+        // ADMIN MODE
+        window.openAdminModal = function() {
+            document.getElementById('adminModal').classList.remove('hidden');
+        };
+
+        window.closeAdminModal = function() {
+            document.getElementById('adminModal').classList.add('hidden');
+        };
+
+        window.verifyAdminPassword = function() {
+            const input = document.getElementById('adminPasswordInput').value;
+            if (input === 'admin123') {
+                isAdminMode = true;
+                document.getElementById('adminLoginSection').classList.add('hidden');
+                document.getElementById('adminControlSection').classList.remove('hidden');
+                document.getElementById('adminStatusLabel').innerText = "管理者 (ログイン中)";
+                renderFeed();
+                renderAdminMomentsList();
+                showToast('管理者としてログインしました');
+            } else {
+                showToast('パスワードが正しくありません');
+            }
+        };
+
+        window.sendAdminAnnouncement = async function() {
+            const text = document.getElementById('adminAnnounceInput').value.trim();
+            if (!text) return;
+
+            try {
+                const docRef = doc(getPublicCollection('loom_moments'));
+                await setDoc(docRef, {
+                    userId: 'admin_system',
+                    userName: '【システムアナウンス】',
+                    userAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=120&q=80',
+                    content: text,
+                    roomKey: currentRoomKey,
+                    createdAt: Date.now()
+                });
+                document.getElementById('adminAnnounceInput').value = '';
+                showToast('システムアナウンスを配信しました');
+            } catch (err) {
+                console.error("Admin announce error:", err);
+            }
+        };
+
+        function renderAdminMomentsList() {
+            const container = document.getElementById('adminMomentsList');
+            if (roomMoments.length === 0) {
+                container.innerHTML = `<p class="text-loom-textMuted">削除可能な投稿はありません</p>`;
+                return;
+            }
+
+            container.innerHTML = roomMoments.map(m => `
+                <div class="flex items-center justify-between p-2 bg-loom-bg rounded-xl border border-loom-border">
+                    <span class="truncate max-w-[200px]">${escapeHtml(m.userName)}: ${escapeHtml(m.content)}</span>
+                    <button onclick="deletePost('${m.id}')" class="bg-red-600 text-white px-2 py-0.5 rounded-lg text-[10px]">削除</button>
+                </div>
+            `).join('');
+        }
+
+        window.switchTab = function(tabName) {
+            ['home', 'friends', 'messages', 'moments'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if (el) el.classList.add('hidden');
+                if (nav) {
+                    nav.classList.remove('bg-loom-cardAlt', 'text-loom-text');
+                    nav.classList.add('text-loom-textMuted');
+                }
+            });
+
+            const targetEl = document.getElementById(`tab-${tabName}`);
+            const targetNav = document.getElementById(`nav-${tabName}`);
+            if (targetEl) targetEl.classList.remove('hidden');
+            if (targetNav) {
+                targetNav.classList.add('bg-loom-cardAlt', 'text-loom-text');
+                targetNav.classList.remove('text-loom-textMuted');
+            }
+        };
+
+        window.showToast = function(msg) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = "bg-loom-text text-white px-4 py-2.5 rounded-2xl text-xs shadow-lg transition-all transform translate-y-2 opacity-0 pointer-events-auto flex items-center space-x-2";
+            toast.innerHTML = `<i class="fa-solid fa-circle-info text-emerald-400"></i><span>${escapeHtml(msg)}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function escapeJs(str) {
+            if (!str) return '';
+            return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
+        function formatTimestamp(ts) {
+            if (!ts) return 'たった今';
+            const diffMin = Math.floor((Date.now() - ts) / 60000);
+            if (diffMin < 1) return 'たった今';
+            if (diffMin < 60) return `${diffMin}分前`;
+            const diffHour = Math.floor(diffMin / 60);
+            if (diffHour < 24) return `${diffHour}時間前`;
+            return `${Math.floor(diffHour / 24)}日前`;
+        }
+
+        // Window startup execution
+        window.onload = function() {
+            initAuth();
+        };
+    </script>
+</body>
+</html>
