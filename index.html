@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>loom10 - つながりを、もっと心地よく。</title>
+    <title>loom - つながりを、もっと心地よく。</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -472,12 +472,9 @@
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATION CONTAINER -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+    <!-- PASSCODE AUTHENTICATION SCRIPT (INDEPENDENT) -->
+    <script>
+        // 外部CDNやネットワーク接続の待ち時間に影響されない即時実行スクリプト
         const REQUIRED_PASSCODE = "S0291PP3343h34";
 
         window.togglePasscodeVisibility = function() {
@@ -494,37 +491,77 @@
         };
 
         window.verifyAccessPasscode = function() {
-            const input = document.getElementById('inputAccessPasscode');
-            const errorMsg = document.getElementById('passcodeErrorMsg');
-            
-            // 全角文字の自動半角変換(NFKC正規化) ＆ 前後・余計な空白の除去
-            const rawPasscode = input ? input.value : '';
-            const passcode = rawPasscode.normalize('NFKC').replace(/\s+/g, '').trim();
+            try {
+                const input = document.getElementById('inputAccessPasscode');
+                const errorMsg = document.getElementById('passcodeErrorMsg');
+                
+                // 全角文字の自動半角変換(NFKC正規化) ＆ 前後・余計な空白の除去
+                const rawPasscode = input ? input.value : '';
+                const passcode = rawPasscode.normalize('NFKC').replace(/\s+/g, '').trim();
 
-            if (passcode === REQUIRED_PASSCODE) {
-                sessionStorage.setItem('loom_passcode_verified', 'true');
-                const gate = document.getElementById('passcodeGateOverlay');
-                if (gate) gate.classList.add('hidden');
-                if (errorMsg) errorMsg.classList.add('hidden');
-                window.showToast('アクセスが許可されました✨');
-            } else {
-                if (errorMsg) {
-                    errorMsg.innerText = 'パスコードが違います（大文字・小文字・文字数をご確認ください）';
-                    errorMsg.classList.remove('hidden');
+                if (passcode === REQUIRED_PASSCODE) {
+                    sessionStorage.setItem('loom_passcode_verified', 'true');
+                    const gate = document.getElementById('passcodeGateOverlay');
+                    if (gate) {
+                        gate.style.display = 'none';
+                        gate.classList.add('hidden');
+                    }
+                    if (errorMsg) errorMsg.classList.add('hidden');
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('アクセスが許可されました✨');
+                    }
+                } else {
+                    if (errorMsg) {
+                        errorMsg.innerText = 'パスコードが違います（大文字・小文字・文字数をご確認ください）';
+                        errorMsg.classList.remove('hidden');
+                    }
+                    if (input) {
+                        input.focus();
+                    }
                 }
-                if (input) {
-                    input.focus();
-                }
+            } catch (e) {
+                console.error("Passcode Verification Error:", e);
             }
         };
+
+        // DOM構築時および即時での認証チェック
+        function applyPasscodeAuthCheck() {
+            const verified = sessionStorage.getItem('loom_passcode_verified');
+            if (verified === 'true') {
+                const gate = document.getElementById('passcodeGateOverlay');
+                if (gate) {
+                    gate.style.display = 'none';
+                    gate.classList.add('hidden');
+                }
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyPasscodeAuthCheck);
+        } else {
+            applyPasscodeAuthCheck();
+        }
+    </script>
+
+    <!-- MAIN APP SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         function checkPasscodeAuth() {
             const verified = sessionStorage.getItem('loom_passcode_verified');
             const gate = document.getElementById('passcodeGateOverlay');
             if (verified === 'true') {
-                if (gate) gate.classList.add('hidden');
+                if (gate) {
+                    gate.style.display = 'none';
+                    gate.classList.add('hidden');
+                }
             } else {
-                if (gate) gate.classList.remove('hidden');
+                if (gate) {
+                    gate.style.display = 'flex';
+                    gate.classList.remove('hidden');
+                }
             }
         }
 
