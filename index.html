@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>loom9 - つながりを、もっと心地よく。</title>
+    <title>loom - つながりを、もっと心地よく。</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -193,16 +193,35 @@
                     
                     <!-- Friend Requests Section -->
                     <div class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-3">
-                        <h3 class="font-bold text-sm">フレンド申請一覧</h3>
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-sm">フレンド申請一覧</h3>
+                            <span id="friendReqBadgeTitle" class="hidden text-xs bg-loom-accent text-white font-bold px-2 py-0.5 rounded-full">0</span>
+                        </div>
                         <div id="friendRequestsList" class="space-y-2">
                             <p class="text-xs text-loom-textMuted">届いているフレンド申請はありません</p>
                         </div>
                     </div>
 
-                    <!-- Active Room Members & Friends list -->
+                    <!-- My Friends List Section -->
                     <div class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-4">
-                        <h3 class="font-bold text-sm">メンバー・フレンド一覧</h3>
-                        <div id="roomMembersList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <h3 class="font-bold text-sm flex items-center justify-between">
+                            <span>マイフレンド</span>
+                            <span id="myFriendsCount" class="text-xs text-loom-textMuted font-normal">0人</span>
+                        </h3>
+                        <div id="myFriendsList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <p class="text-xs text-loom-textMuted col-span-2">まだフレンドがいません。「フレンドかも？」から申請してみましょう！</p>
+                        </div>
+                    </div>
+
+                    <!-- People You May Know / Room Members Section -->
+                    <div class="bg-loom-card p-5 rounded-3xl border border-loom-border shadow-sm space-y-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-sm">フレンドかも？</h3>
+                                <p class="text-[10px] text-loom-textMuted">同じルームのメンバーやアクティブなユーザー</p>
+                            </div>
+                        </div>
+                        <div id="peopleYouMayKnowList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <!-- Members inserted dynamically -->
                         </div>
                     </div>
@@ -522,6 +541,8 @@
         let directMessages = [];
         let friendRequests = [];
         let myFriends = new Set();
+        let myPendingSentRequests = new Set(); // 自分が送信済みの申請中IDセット
+        let allKnownFriendProfiles = new Map(); // フレンドのプロファイル保持用
 
         let unsubPresence = null;
         let unsubMoments = null;
@@ -823,249 +844,236 @@
                             roomUsers.push({ id: docSnap.id, ...data });
                         }
                     }
+                    // プロファイルキャッシュ更新
+                    allKnownFriendProfiles.set(docSnap.id, data);
                 });
 
                 renderFriendsStatusCarousel();
-                renderRoomMembersList();
+                renderFriendsAndSuggestions();
             });
         }
 
-        function renderFriendsStatusCarousel() {
-            const carousel = document.getElementById('friendsStatusCarousel');
-            const badge = document.getElementById('onlineCountBadge');
+        function renderFriendsAndSuggestions() {
+            // 1. レンダリング: マイフレンド一覧
+            const myFriendsContainer = document.getElementById('myFriendsList');
+            const myFriendsCountEl = document.getElementById('myFriendsCount');
 
-            if (badge) badge.innerText = `${roomUsers.length} online`;
-            if (!carousel) return;
-
-            if (roomUsers.length === 0) {
-                carousel.innerHTML = `<p class="text-xs text-loom-textMuted py-3 px-2">オンラインのメンバーはいません</p>`;
-                return;
+            if (myFriendsCountEl) {
+                myFriendsCountEl.innerText = `${myFriends.size}人`;
             }
 
-            carousel.innerHTML = roomUsers.map(u => {
-                const isMe = u.id === currentUserId;
-                return `
-                    <div onclick="window.openChatWithUser('${u.id}')" class="flex-shrink-0 w-28 bg-loom-card p-3 rounded-2xl border border-loom-border shadow-sm flex flex-col items-center cursor-pointer hover:border-loom-primary transition-all group">
-                        <div class="relative mb-2">
-                            <img src="${u.avatar || AVATAR_PRESETS[0]}" class="w-12 h-12 rounded-full object-cover border-2 border-emerald-400 group-hover:scale-105 transition-transform">
-                            <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
-                        </div>
-                        <p class="text-xs font-bold text-loom-text truncate w-full text-center">${escapeHtml(u.name)}${isMe ? ' (自分)' : ''}</p>
-                        <span class="text-[10px] text-loom-textMuted truncate w-full text-center mt-0.5 bg-loom-cardAlt px-2 py-0.5 rounded-full">${escapeHtml(u.status || 'オンライン')}</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderRoomMembersList() {
-            const container = document.getElementById('roomMembersList');
-            if (!container) return;
-
-            if (roomUsers.length === 0) {
-                container.innerHTML = `<p class="text-xs text-loom-textMuted col-span-2">メンバーはいません</p>`;
-                return;
-            }
-
-            container.innerHTML = roomUsers.map(u => {
-                const isMe = u.id === currentUserId;
-                return `
-                    <div class="flex items-center justify-between p-3 bg-loom-cardAlt rounded-2xl border border-loom-border/50">
-                        <div class="flex items-center space-x-3">
-                            <img src="${u.avatar || AVATAR_PRESETS[0]}" class="w-9 h-9 rounded-full object-cover">
-                            <div>
-                                <p class="text-xs font-bold">${escapeHtml(u.name)} ${isMe ? '<span class="text-[10px] text-loom-primary">(自分)</span>' : ''}</p>
-                                <p class="text-[10px] text-loom-textMuted">${escapeHtml(u.status || 'オンライン')} ${u.statusTime ? '• ' + escapeHtml(u.statusTime) : ''}</p>
-                            </div>
-                        </div>
-                        ${!isMe ? `
-                            <div class="flex space-x-1">
-                                <button onclick="window.openChatWithUser('${u.id}')" class="bg-loom-card hover:bg-white text-loom-primary border border-loom-border p-2 rounded-xl text-xs" title="メッセージ">
-                                    <i class="fa-regular fa-comment-dots"></i>
-                                </button>
-                                <button onclick="window.sendFriendRequest('${u.id}')" class="bg-loom-primary text-white p-2 rounded-xl text-xs hover:bg-loom-primaryHover" title="フレンド申請">
-                                    <i class="fa-solid fa-user-plus"></i>
-                                </button>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderMessagesViews() {
-            // Render Right Sidebar Messages Panel
-            const sidebarContainer = document.getElementById('sidebarMessagesContainer');
-            if (sidebarContainer) {
-                if (roomMessages.length === 0) {
-                    sidebarContainer.innerHTML = `<p class="text-xs text-loom-textMuted text-center py-4">メッセージはありません</p>`;
+            if (myFriendsContainer) {
+                if (myFriends.size === 0) {
+                    myFriendsContainer.innerHTML = `<p class="text-xs text-loom-textMuted col-span-2">まだフレンドがいません。「フレンドかも？」から申請してみましょう！</p>`;
                 } else {
-                    const recentMsgs = roomMessages.slice(-5);
-                    sidebarContainer.innerHTML = recentMsgs.map(m => `
-                        <div class="p-2.5 bg-loom-bg rounded-2xl border border-loom-border/60 text-xs space-y-1">
-                            <div class="flex justify-between items-center text-[10px] text-loom-textMuted">
-                                <span class="font-semibold text-loom-text">${escapeHtml(m.senderName)}</span>
-                                <span>${formatTimestamp(m.createdAt)}</span>
-                            </div>
-                            <p class="text-loom-text text-xs break-words">${escapeHtml(m.text)}</p>
-                        </div>
-                    `).join('');
-                }
-            }
+                    const friendArray = Array.from(myFriends);
+                    myFriendsContainer.innerHTML = friendArray.map(friendId => {
+                        // オンライン情報があればそれを使い、無ければ過去キャッシュを使用
+                        const onlineUser = roomUsers.find(u => u.id === friendId);
+                        const cachedUser = allKnownFriendProfiles.get(friendId) || {};
+                        const name = onlineUser?.name || cachedUser.name || 'フレンド';
+                        const avatar = onlineUser?.avatar || cachedUser.avatar || AVATAR_PRESETS[0];
+                        const status = onlineUser?.status || cachedUser.status || 'オフライン';
+                        const isOnline = !!onlineUser;
 
-            // Render Messages Tab View
-            const tabContent = document.getElementById('messagesTabContent');
-            if (tabContent) {
-                tabContent.innerHTML = `
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between border-b border-loom-border pb-3">
-                            <span class="text-xs font-bold text-loom-textMuted">ルームチャット (${isInRoom ? currentRoomKey : 'ロビー'})</span>
-                        </div>
-                        <div id="messagesTabList" class="space-y-3 max-h-96 overflow-y-auto pr-1">
-                            ${roomMessages.length === 0 ? '<p class="text-xs text-loom-textMuted py-4 text-center">メッセージがまだありません</p>' : 
-                                roomMessages.map(m => `
-                                    <div class="flex items-start space-x-3 text-xs">
-                                        <img src="${m.senderAvatar || AVATAR_PRESETS[0]}" class="w-8 h-8 rounded-full object-cover">
-                                        <div class="flex-1 bg-loom-bg p-3 rounded-2xl border border-loom-border">
-                                            <div class="flex justify-between items-center mb-1">
-                                                <span class="font-bold text-xs">${escapeHtml(m.senderName)}</span>
-                                                <span class="text-[10px] text-loom-textMuted">${formatTimestamp(m.createdAt)}</span>
-                                            </div>
-                                            <p class="text-xs text-loom-text break-words">${escapeHtml(m.text)}</p>
-                                        </div>
+                        return `
+                            <div class="flex items-center justify-between p-3 bg-loom-cardAlt rounded-2xl border border-loom-border/50">
+                                <div class="flex items-center space-x-3">
+                                    <div class="relative">
+                                        <img src="${avatar}" class="w-9 h-9 rounded-full object-cover">
+                                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-gray-300'} border-2 border-white"></span>
                                     </div>
-                                `).join('')
-                            }
-                        </div>
-                        <div class="flex items-center space-x-2 pt-2 border-t border-loom-border">
-                            <input type="text" id="tabMsgInput" placeholder="メッセージを入力..." class="flex-1 bg-loom-bg px-4 py-2.5 rounded-2xl text-xs outline-none border border-loom-border focus:border-loom-primary" onkeypress="if(event.key==='Enter') window.sendRoomMessage('tabMsgInput')">
-                            <button onclick="window.sendRoomMessage('tabMsgInput')" class="bg-loom-primary text-white px-4 py-2.5 rounded-2xl text-xs font-semibold hover:bg-loom-primaryHover">送信</button>
-                        </div>
-                    </div>
-                `;
-                const msgList = document.getElementById('messagesTabList');
-                if (msgList) msgList.scrollTop = msgList.scrollHeight;
+                                    <div class="truncate max-w-[120px]">
+                                        <p class="text-xs font-bold truncate">${escapeHtml(name)}</p>
+                                        <p class="text-[10px] text-loom-textMuted truncate">${escapeHtml(status)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-1">
+                                    <button onclick="window.openChatWithUser('${friendId}')" class="bg-loom-card hover:bg-white text-loom-primary border border-loom-border p-2 rounded-xl text-xs" title="メッセージ">
+                                        <i class="fa-regular fa-comment-dots"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // 2. レンダリング: フレンドかも？ (未フレンドの同一ルーム/アクティブメンバー)
+            const suggestionsContainer = document.getElementById('peopleYouMayKnowList');
+            if (suggestionsContainer) {
+                const nonFriends = roomUsers.filter(u => u.id !== currentUserId && !myFriends.has(u.id));
+
+                if (nonFriends.length === 0) {
+                    suggestionsContainer.innerHTML = `<p class="text-xs text-loom-textMuted col-span-2">新しいメンバーはいません</p>`;
+                } else {
+                    suggestionsContainer.innerHTML = nonFriends.map(u => {
+                        const isPending = myPendingSentRequests.has(u.id);
+
+                        return `
+                            <div class="flex items-center justify-between p-3 bg-loom-cardAlt rounded-2xl border border-loom-border/50">
+                                <div class="flex items-center space-x-3">
+                                    <img src="${u.avatar || AVATAR_PRESETS[0]}" class="w-9 h-9 rounded-full object-cover">
+                                    <div class="truncate max-w-[110px]">
+                                        <p class="text-xs font-bold truncate">${escapeHtml(u.name)}</p>
+                                        <p class="text-[10px] text-loom-textMuted truncate">${escapeHtml(u.status || 'オンライン')}</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-1">
+                                    <button onclick="window.openChatWithUser('${u.id}')" class="bg-loom-card hover:bg-white text-loom-primary border border-loom-border p-2 rounded-xl text-xs" title="メッセージ">
+                                        <i class="fa-regular fa-comment-dots"></i>
+                                    </button>
+                                    ${isPending ? `
+                                        <button disabled class="bg-gray-200 text-loom-textMuted text-xs px-2.5 py-1.5 rounded-xl font-medium cursor-not-allowed">
+                                            申請済み
+                                        </button>
+                                    ` : `
+                                        <button onclick="window.sendFriendRequest('${u.id}')" class="bg-loom-primary hover:bg-loom-primaryHover text-white text-xs px-2.5 py-1.5 rounded-xl font-medium flex items-center space-x-1 transition-all">
+                                            <i class="fa-solid fa-user-plus text-[10px]"></i>
+                                            <span>申請</span>
+                                        </button>
+                                    `}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
             }
         }
 
-        function setupMessagesListener() {
-            if (unsubMessages) unsubMessages();
-            unsubMessages = onSnapshot(getPublicCollection('loom_messages'), (snapshot) => {
-                roomMessages = [];
-                directMessages = [];
-                let hasNewMsg = false;
-                let senderName = "誰か";
-
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const msgId = docSnap.id;
-
-                    if (data.msgType === 'direct') {
-                        directMessages.push({ id: msgId, ...data });
-                        return;
-                    }
-
-                    if (isInRoom) {
-                        if (data.roomKey === currentRoomKey) {
-                            roomMessages.push({ id: msgId, ...data });
-                            if (!isInitialMessagesLoad && data.senderId !== currentUserId && !knownMessageIds.has(msgId)) {
-                                hasNewMsg = true;
-                                senderName = data.senderName || "メンバー";
-                            }
-                            knownMessageIds.add(msgId);
-                        }
-                    } else {
-                        if (!data.roomKey || data.roomKey === 'global' || data.roomKey === 'public' || data.msgType === 'public') {
-                            roomMessages.push({ id: msgId, ...data });
-                            if (!isInitialMessagesLoad && data.senderId !== currentUserId && !knownMessageIds.has(msgId)) {
-                                hasNewMsg = true;
-                                senderName = data.senderName || "ユーザー";
-                            }
-                            knownMessageIds.add(msgId);
-                        }
-                    }
-                });
-
-                if (isInitialMessagesLoad) {
-                    isInitialMessagesLoad = false;
-                } else if (hasNewMsg) {
-                    playNotificationSound();
-                    window.showToast(`💬 ${escapeHtml(senderName)} からメッセージが届きました`);
-                }
-
-                roomMessages.sort((a, b) => parseTimestamp(a.createdAt) - parseTimestamp(b.createdAt));
-                directMessages.sort((a, b) => parseTimestamp(a.createdAt) - parseTimestamp(b.createdAt));
-
-                renderMessagesViews();
-                if (activeChatUserId) {
-                    renderDirectMessages();
-                }
-            });
+        // 互換性維持
+        function renderRoomMembersList() {
+            renderFriendsAndSuggestions();
         }
 
-        function renderDirectMessages() {
-            const container = document.getElementById('chatMessagesContainer');
-            if (!container || !activeChatUserId) return;
-
-            const filtered = directMessages.filter(m => 
-                (m.senderId === currentUserId && m.receiverId === activeChatUserId) ||
-                (m.senderId === activeChatUserId && m.receiverId === currentUserId)
-            );
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-xs text-loom-textMuted text-center pt-8">メッセージ履歴はありません。<br>会話を始めてみましょう！</p>`;
+        window.sendFriendRequest = async function(targetUserId) {
+            if (myFriends.has(targetUserId)) {
+                window.showToast('すでにフレンドです');
                 return;
             }
 
-            container.innerHTML = filtered.map(m => {
-                const isMe = m.senderId === currentUserId;
-                return `
-                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1">
-                        <span class="text-[10px] text-gray-400 px-1">${formatTimestamp(m.createdAt)}</span>
-                        <div class="max-w-[75%] px-4 py-2.5 rounded-2xl text-xs break-words ${isMe ? 'bg-loom-primary text-white rounded-br-none shadow-sm' : 'bg-white text-loom-text border border-loom-border rounded-bl-none shadow-sm'}">
-                            ${escapeHtml(m.text)}
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            if (myPendingSentRequests.has(targetUserId)) {
+                window.showToast('すでにフレンド申請を送信済みです');
+                return;
+            }
 
-            container.scrollTop = container.scrollHeight;
-        }
-
-        window.sendRoomMessage = async function(inputId) {
-            const input = document.getElementById(inputId);
-            if (!input) return;
-            const text = input.value.trim();
-            if (!text) return;
-
-            const newMsg = {
-                id: 'local_' + Date.now(),
-                msgType: isInRoom ? 'room' : 'public',
-                roomKey: isInRoom ? currentRoomKey : 'global',
-                senderId: currentUserId,
-                senderName: currentUser ? currentUser.name : 'ユーザー',
-                senderAvatar: currentUser ? currentUser.avatar : AVATAR_PRESETS[0],
-                text: text,
-                createdAt: Date.now()
-            };
-
-            // Instant optimistic render
-            roomMessages.push(newMsg);
-            input.value = '';
-            renderMessagesViews();
+            // オプティミスティック（即時）更新
+            myPendingSentRequests.add(targetUserId);
+            renderFriendsAndSuggestions();
 
             try {
-                const msgDoc = doc(getPublicCollection('loom_messages'));
-                await setDoc(msgDoc, {
-                    msgType: isInRoom ? 'room' : 'public',
-                    roomKey: isInRoom ? currentRoomKey : 'global',
-                    senderId: currentUserId,
-                    senderName: currentUser ? currentUser.name : 'ユーザー',
-                    senderAvatar: currentUser ? currentUser.avatar : AVATAR_PRESETS[0],
-                    text: text,
+                const reqDoc = doc(getPublicCollection('loom_friend_requests'));
+                await setDoc(reqDoc, {
+                    id: reqDoc.id,
+                    fromId: currentUserId,
+                    fromName: currentUser ? currentUser.name : 'ユーザー',
+                    fromAvatar: currentUser ? currentUser.avatar : AVATAR_PRESETS[0],
+                    toId: targetUserId,
+                    status: 'pending',
                     createdAt: Date.now()
                 });
+                window.showToast('フレンド申請を送信しました！');
+            } catch(e) { 
+                console.error("Friend request error:", e);
+                myPendingSentRequests.delete(targetUserId);
+                renderFriendsAndSuggestions();
+                window.showToast('申請の送信に失敗しました'); 
+            }
+        };
+
+        function setupFriendsListener() {
+            if (unsubFriends) unsubFriends();
+            unsubFriends = onSnapshot(getPublicCollection('loom_friend_requests'), (snapshot) => {
+                friendRequests = [];
+                myFriends = new Set();
+                myPendingSentRequests = new Set();
+
+                snapshot.forEach(d => {
+                    const req = d.data();
+                    const reqId = d.id;
+
+                    // 1. 承認済みフレンド関係の判定
+                    if (req.status === 'accepted') {
+                        if (req.fromId === currentUserId) {
+                            myFriends.add(req.toId);
+                        } else if (req.toId === currentUserId) {
+                            myFriends.add(req.fromId);
+                            // 相手の情報プロファイルを記憶
+                            if (req.fromName) {
+                                allKnownFriendProfiles.set(req.fromId, {
+                                    name: req.fromName,
+                                    avatar: req.fromAvatar
+                                });
+                            }
+                        }
+                    } 
+                    // 2. 申請中状態の判定
+                    else if (req.status === 'pending') {
+                        if (req.toId === currentUserId) {
+                            // 自分宛てに届いている申請
+                            friendRequests.push({ id: reqId, ...req });
+                        } else if (req.fromId === currentUserId) {
+                            // 自分が送信済みの未承認申請
+                            myPendingSentRequests.add(req.toId);
+                        }
+                    }
+                });
+
+                renderFriendRequests();
+                renderFriendsAndSuggestions();
+            });
+        }
+
+        function renderFriendRequests() {
+            const list = document.getElementById('friendRequestsList');
+            const badge = document.getElementById('friendReqBadge');
+            const mobBadge = document.getElementById('mobFriendBadge');
+            const badgeTitle = document.getElementById('friendReqBadgeTitle');
+
+            if (badge) {
+                if (friendRequests.length > 0) {
+                    badge.innerText = friendRequests.length;
+                    badge.classList.remove('hidden');
+                } else badge.classList.add('hidden');
+            }
+            if (mobBadge) {
+                if (friendRequests.length > 0) {
+                    mobBadge.innerText = friendRequests.length;
+                    mobBadge.classList.remove('hidden');
+                } else mobBadge.classList.add('hidden');
+            }
+            if (badgeTitle) {
+                if (friendRequests.length > 0) {
+                    badgeTitle.innerText = friendRequests.length;
+                    badgeTitle.classList.remove('hidden');
+                } else badgeTitle.classList.add('hidden');
+            }
+
+            if (!list) return;
+            if (friendRequests.length === 0) {
+                list.innerHTML = `<p class="text-xs text-loom-textMuted">届いているフレンド申請はありません</p>`;
+                return;
+            }
+
+            list.innerHTML = friendRequests.map(r => `
+                <div class="flex items-center justify-between p-3 bg-loom-bg rounded-2xl border border-loom-border">
+                    <div class="flex items-center space-x-3">
+                        <img src="${r.fromAvatar || AVATAR_PRESETS[0]}" class="w-8 h-8 rounded-full object-cover">
+                        <span class="text-xs font-bold">${escapeHtml(r.fromName)}</span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="window.acceptFriendRequest('${r.id}')" class="bg-loom-primary hover:bg-loom-primaryHover text-white text-xs px-3 py-1.5 rounded-xl font-medium">承認</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.acceptFriendRequest = async function(reqId) {
+            try {
+                await updateDoc(getPublicDoc('loom_friend_requests', reqId), { status: 'accepted' });
+                window.showToast('フレンド申請を承認しました🎉');
             } catch(e) {
-                console.error("Room Message Send Error:", e);
+                window.showToast('承認処理に失敗しました');
             }
         };
 
