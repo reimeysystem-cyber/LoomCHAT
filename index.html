@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>loom - つながりを、もっと心地よく。</title>
+    <title>loom6 - つながりを、もっと心地よく。</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -457,6 +457,7 @@
         let isAdminMode = false;
         let selectedPresetPhoto = null;
         let selectedAvatarUrl = null;
+        let activeTab = 'home';
 
         let roomUsers = [];
         let roomMoments = [];
@@ -483,6 +484,202 @@
             'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80',
             'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=120&q=80'
         ];
+
+        // Sound and Toast Notifications
+        function playNotificationSound() {
+            if (!notificationsEnabled) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.25);
+            } catch(e) {}
+        }
+
+        window.showToast = function(msg) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'bg-loom-text text-white text-xs px-4 py-2.5 rounded-2xl shadow-lg border border-gray-700 pointer-events-auto flex items-center space-x-2 transition-all duration-300 transform translate-y-2 opacity-0';
+            toast.innerHTML = `<i class="fa-solid fa-circle-info text-loom-accent"></i><span>${escapeHtml(msg)}</span>`;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        window.toggleNotifications = function(val) {
+            notificationsEnabled = val;
+            window.showToast(val ? '通知をオンにしました' : '通知をオフにしました');
+        };
+
+        window.switchTab = function(tabName) {
+            activeTab = tabName;
+            const tabs = ['home', 'friends', 'messages', 'moments'];
+
+            tabs.forEach(t => {
+                const tabEl = document.getElementById(`tab-${t}`);
+                if (tabEl) {
+                    if (t === tabName) {
+                        tabEl.classList.remove('hidden');
+                    } else {
+                        tabEl.classList.add('hidden');
+                    }
+                }
+
+                // Desktop Nav Style
+                const navBtn = document.getElementById(`nav-${t}`);
+                if (navBtn) {
+                    if (t === tabName) {
+                        navBtn.className = 'w-full flex items-center space-x-3 px-4 py-3 rounded-2xl bg-loom-cardAlt font-medium text-loom-text transition-all';
+                    } else {
+                        navBtn.className = 'w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-loom-textMuted hover:bg-loom-cardAlt hover:text-loom-text transition-all';
+                    }
+                }
+
+                // Mobile Nav Style
+                const mobBtn = document.getElementById(`mob-nav-${t}`);
+                if (mobBtn) {
+                    if (t === tabName) {
+                        mobBtn.className = 'flex flex-col items-center justify-center flex-1 py-1 text-loom-text relative';
+                    } else {
+                        mobBtn.className = 'flex flex-col items-center justify-center flex-1 py-1 text-loom-textMuted relative';
+                    }
+                }
+            });
+        };
+
+        window.joinCustomRoom = async function() {
+            const input = document.getElementById('inputRoomKey');
+            const key = input ? input.value.trim() : '';
+            if (!key) return;
+
+            currentRoomKey = key;
+            isInRoom = true;
+            document.getElementById('roomStatusDot').className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+            document.getElementById('roomStatusLabel').innerText = key;
+            window.showToast(`ルーム "${key}" に入室しました`);
+
+            await updateUserPresence();
+            setupMomentsListener();
+            setupMessagesListener();
+        };
+
+        window.leaveRoom = async function() {
+            isInRoom = false;
+            document.getElementById('roomStatusDot').className = "w-2.5 h-2.5 rounded-full bg-gray-400";
+            document.getElementById('roomStatusLabel').innerText = "ロビー (全体)";
+            window.showToast('ルームから退出しました（全体表示）');
+
+            await updateUserPresence();
+            setupMomentsListener();
+            setupMessagesListener();
+        };
+
+        window.selectPresetPhotoModal = function() {
+            document.getElementById('photoSelectModal').classList.remove('hidden');
+        };
+
+        window.closePhotoModal = function() {
+            document.getElementById('photoSelectModal').classList.add('hidden');
+        };
+
+        window.attachPhoto = function(url) {
+            selectedPresetPhoto = url;
+            document.getElementById('previewPhotoImg').src = url;
+            document.getElementById('selectedPhotoPreview').classList.remove('hidden');
+            window.closePhotoModal();
+        };
+
+        window.clearSelectedPhoto = function() {
+            selectedPresetPhoto = null;
+            document.getElementById('selectedPhotoPreview').classList.add('hidden');
+        };
+
+        window.openProfileModal = function() {
+            if (!currentUser) return;
+            selectedAvatarUrl = currentUser.avatar || AVATAR_PRESETS[0];
+
+            // Render Avatar Presets
+            const container = document.getElementById('avatarPresetsContainer');
+            if (container) {
+                container.innerHTML = AVATAR_PRESETS.map(url => `
+                    <img src="${url}" onclick="window.selectAvatarPreset('${url}')" class="w-12 h-12 rounded-full border-2 ${selectedAvatarUrl === url ? 'border-loom-primary scale-105' : 'border-transparent'} cursor-pointer hover:opacity-80 transition-all">
+                `).join('');
+            }
+
+            document.getElementById('inputProfileName').value = currentUser.name || '';
+            document.getElementById('inputProfileStatus').value = currentUser.status || 'リラックス中';
+            document.getElementById('inputProfileTime').value = currentUser.statusTime || '';
+
+            // Check Cooldown
+            const cooldownSpan = document.getElementById('nameCooldownTimer');
+            const now = Date.now();
+            const lastChanged = currentUser.nameLastChanged || 0;
+            const diffHours = (now - lastChanged) / (1000 * 60 * 60);
+
+            if (diffHours < 24) {
+                const remainHours = Math.ceil(24 - diffHours);
+                cooldownSpan.innerText = `変更制限中 (残り${remainHours}時間)`;
+                document.getElementById('inputProfileName').disabled = true;
+            } else {
+                cooldownSpan.innerText = '';
+                document.getElementById('inputProfileName').disabled = false;
+            }
+
+            document.getElementById('profileModal').classList.remove('hidden');
+        };
+
+        window.selectAvatarPreset = function(url) {
+            selectedAvatarUrl = url;
+            window.openProfileModal(); // Refresh border selection
+        };
+
+        window.closeProfileModal = function() {
+            document.getElementById('profileModal').classList.add('hidden');
+        };
+
+        window.saveProfileSettings = async function() {
+            if (!currentUser) return;
+            const nameInput = document.getElementById('inputProfileName');
+            const newName = nameInput ? nameInput.value.trim() : '';
+            const newStatus = document.getElementById('inputProfileStatus').value;
+            const newTime = document.getElementById('inputProfileTime').value.trim();
+
+            if (newName && newName !== currentUser.name && !nameInput.disabled) {
+                currentUser.name = newName;
+                currentUser.nameLastChanged = Date.now();
+            }
+
+            currentUser.avatar = selectedAvatarUrl || currentUser.avatar || AVATAR_PRESETS[0];
+            currentUser.status = newStatus;
+            currentUser.statusTime = newTime;
+
+            localStorage.setItem('loom_user_profile_v2', JSON.stringify(currentUser));
+            updateMyProfileUI();
+            await updateUserPresence();
+            window.closeProfileModal();
+            window.showToast('プロフィールを更新しました！');
+        };
+
+        window.closeChatModal = function() {
+            document.getElementById('chatModal').classList.add('hidden');
+            activeChatUserId = null;
+        };
 
         function getPublicDoc(colName, docId) {
             return doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
@@ -560,7 +757,6 @@
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
                     const lastSeen = parseTimestamp(data.lastSeen);
-                    // Active within 10 minutes
                     if (now - lastSeen < 600000) {
                         if (isInRoom) {
                             if (data.roomKey === currentRoomKey) {
@@ -637,6 +833,61 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function renderMessagesViews() {
+            // Render Right Sidebar Messages Panel
+            const sidebarContainer = document.getElementById('sidebarMessagesContainer');
+            if (sidebarContainer) {
+                if (roomMessages.length === 0) {
+                    sidebarContainer.innerHTML = `<p class="text-xs text-loom-textMuted text-center py-4">メッセージはありません</p>`;
+                } else {
+                    const recentMsgs = roomMessages.slice(-5);
+                    sidebarContainer.innerHTML = recentMsgs.map(m => `
+                        <div class="p-2.5 bg-loom-bg rounded-2xl border border-loom-border/60 text-xs space-y-1">
+                            <div class="flex justify-between items-center text-[10px] text-loom-textMuted">
+                                <span class="font-semibold text-loom-text">${escapeHtml(m.senderName)}</span>
+                                <span>${formatTimestamp(m.createdAt)}</span>
+                            </div>
+                            <p class="text-loom-text text-xs break-words">${escapeHtml(m.text)}</p>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            // Render Messages Tab View
+            const tabContent = document.getElementById('messagesTabContent');
+            if (tabContent) {
+                tabContent.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between border-b border-loom-border pb-3">
+                            <span class="text-xs font-bold text-loom-textMuted">ルームチャット (${isInRoom ? currentRoomKey : 'ロビー'})</span>
+                        </div>
+                        <div id="messagesTabList" class="space-y-3 max-h-96 overflow-y-auto pr-1">
+                            ${roomMessages.length === 0 ? '<p class="text-xs text-loom-textMuted py-4 text-center">メッセージがまだありません</p>' : 
+                                roomMessages.map(m => `
+                                    <div class="flex items-start space-x-3 text-xs">
+                                        <img src="${m.senderAvatar || AVATAR_PRESETS[0]}" class="w-8 h-8 rounded-full object-cover">
+                                        <div class="flex-1 bg-loom-bg p-3 rounded-2xl border border-loom-border">
+                                            <div class="flex justify-between items-center mb-1">
+                                                <span class="font-bold text-xs">${escapeHtml(m.senderName)}</span>
+                                                <span class="text-[10px] text-loom-textMuted">${formatTimestamp(m.createdAt)}</span>
+                                            </div>
+                                            <p class="text-xs text-loom-text break-words">${escapeHtml(m.text)}</p>
+                                        </div>
+                                    </div>
+                                `).join('')
+                            }
+                        </div>
+                        <div class="flex items-center space-x-2 pt-2 border-t border-loom-border">
+                            <input type="text" id="tabMsgInput" placeholder="メッセージを入力..." class="flex-1 bg-loom-bg px-4 py-2.5 rounded-2xl text-xs outline-none border border-loom-border focus:border-loom-primary" onkeypress="if(event.key==='Enter') window.sendRoomMessage('tabMsgInput')">
+                            <button onclick="window.sendRoomMessage('tabMsgInput')" class="bg-loom-primary text-white px-4 py-2.5 rounded-2xl text-xs font-semibold hover:bg-loom-primaryHover">送信</button>
+                        </div>
+                    </div>
+                `;
+                const msgList = document.getElementById('messagesTabList');
+                if (msgList) msgList.scrollTop = msgList.scrollHeight;
+            }
         }
 
         function setupMessagesListener() {
@@ -873,12 +1124,10 @@
                     const data = docSnap.data();
                     const momentId = docSnap.id;
                     if (isInRoom) {
-                        // ルームモード時: そのルーム専用の投稿のみを表示
                         if (data.roomKey === currentRoomKey) {
                             roomMoments.push({ id: momentId, ...data });
                         }
                     } else {
-                        // 公開モード時: 公開投稿(roomKeyが未指定、または'global'/'public')のみを表示
                         if (!data.roomKey || data.roomKey === 'global' || data.roomKey === 'public') {
                             roomMoments.push({ id: momentId, ...data });
                         }
@@ -1125,7 +1374,16 @@
                 }
 
                 updateMyProfileUI();
-                await joinRoom(currentRoomKey);
+                window.switchTab('home');
+
+                await updateUserPresence();
+                setupPresenceListener();
+                setupMomentsListener();
+                setupMessagesListener();
+                setupFriendsListener();
+
+                // Heartbeat timer for online presence (every 2 min)
+                setInterval(() => updateUserPresence(), 120000);
             } catch(err) {
                 console.error("Initialization error:", err);
             }
