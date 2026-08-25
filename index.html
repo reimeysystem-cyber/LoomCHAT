@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>loom - つながりを、もっと心地よく。</title>
+    <title>loom10 - つながりを、もっと心地よく。</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -455,7 +455,12 @@
             </div>
 
             <div class="space-y-3">
-                <input type="password" id="inputAccessPasscode" placeholder="パスコードを入力" class="w-full bg-loom-bg px-4 py-3 rounded-2xl text-center font-mono text-sm border border-loom-border outline-none focus:border-loom-primary transition-all tracking-widest" onkeypress="if(event.key==='Enter') window.verifyAccessPasscode()">
+                <div class="relative">
+                    <input type="password" id="inputAccessPasscode" placeholder="パスコードを入力" class="w-full bg-loom-bg pl-4 pr-10 py-3 rounded-2xl text-center font-mono text-sm border border-loom-border outline-none focus:border-loom-primary transition-all tracking-widest" onkeypress="if(event.key==='Enter') window.verifyAccessPasscode()">
+                    <button type="button" onclick="window.togglePasscodeVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-loom-textMuted hover:text-loom-text p-1">
+                        <i id="passcodeEyeIcon" class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
                 <p id="passcodeErrorMsg" class="text-xs text-rose-500 hidden font-medium">パスコードが違います</p>
                 
                 <button onclick="window.verifyAccessPasscode()" class="w-full bg-loom-primary hover:bg-loom-primaryHover text-white py-3 rounded-2xl text-sm font-semibold shadow-sm transition-all">
@@ -467,8 +472,7 @@
         </div>
     </div>
 
-    <script src="firebase-config.js" onerror="console.log('firebase-config.js not found. Using default embedded config.')"></script>
-
+    <!-- TOAST NOTIFICATION CONTAINER -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -476,10 +480,26 @@
 
         const REQUIRED_PASSCODE = "S0291PP3343h34";
 
+        window.togglePasscodeVisibility = function() {
+            const input = document.getElementById('inputAccessPasscode');
+            const icon = document.getElementById('passcodeEyeIcon');
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-regular fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-regular fa-eye';
+            }
+        };
+
         window.verifyAccessPasscode = function() {
             const input = document.getElementById('inputAccessPasscode');
             const errorMsg = document.getElementById('passcodeErrorMsg');
-            const passcode = input ? input.value.trim() : '';
+            
+            // 全角文字の自動半角変換(NFKC正規化) ＆ 前後・余計な空白の除去
+            const rawPasscode = input ? input.value : '';
+            const passcode = rawPasscode.normalize('NFKC').replace(/\s+/g, '').trim();
 
             if (passcode === REQUIRED_PASSCODE) {
                 sessionStorage.setItem('loom_passcode_verified', 'true');
@@ -488,9 +508,11 @@
                 if (errorMsg) errorMsg.classList.add('hidden');
                 window.showToast('アクセスが許可されました✨');
             } else {
-                if (errorMsg) errorMsg.classList.remove('hidden');
+                if (errorMsg) {
+                    errorMsg.innerText = 'パスコードが違います（大文字・小文字・文字数をご確認ください）';
+                    errorMsg.classList.remove('hidden');
+                }
                 if (input) {
-                    input.value = '';
                     input.focus();
                 }
             }
